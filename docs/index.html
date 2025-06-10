@@ -169,15 +169,6 @@
         });
     }
     populateList();
-(${familyOccurrences[fam]})`; fli.className='family-header';ul.appendChild(fli);
-            Array.from(familySpecies[fam]).sort().forEach(gen=>{
-                const gli=document.createElement('li'); gli.textContent=`${gen} (${genusOccurrences[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen);ul.appendChild(gli);
-                Array.from(genusSpecies[gen]).sort().forEach(sp=>{
-                    const sli=document.createElement('li'); sli.textContent=`${sp} (${speciesOccurrences[sp]})`; sli.className='species-item'; sli.onclick=()=>focusSp(sp);ul.appendChild(sli);
-                });
-            });
-        });
-    }
     function focusSp(sp){ if(!speciesMarkers[sp])return; markers.clearLayers(); speciesMarkers[sp].forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(speciesMarkers[sp]).getBounds().pad(0.25)); }
     function focusGen(gen){ if(!genusSpecies[gen])return; let arr=[]; genusSpecies[gen].forEach(sp=> arr=arr.concat(speciesMarkers[sp])); markers.clearLayers(); arr.forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25)); }
     function focusFam(fam){ if(!familySpecies[fam])return; let arr=[]; familySpecies[fam].forEach(gen=> genusSpecies[gen].forEach(sp=> arr=arr.concat(speciesMarkers[sp]))); markers.clearLayers(); arr.forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25)); }
