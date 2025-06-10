@@ -123,9 +123,9 @@
       Object.keys(familySpecies).sort().forEach(fam=>{
         const fli=document.createElement('li'); fli.textContent=`${fam} (${familyCount[fam]})`; fli.className='family-header'; ul.appendChild(fli);
         Array.from(familySpecies[fam]).sort().forEach(gen=>{
-          const gli=document.createElement('li'); gli.textContent=`-- ${gen} (${genusCount[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen); ul.appendChild(gli);
+          const gli=document.createElement('li'); gli.textContent=`${gen} (${genusCount[gen]})`} (${genusCount[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen); ul.appendChild(gli);
           Array.from(genusSpecies[gen]).sort().forEach(sp=>{
-            const sli=document.createElement('li'); sli.textContent=`---- ${sp} (${speciesCount[sp]})`; sli.className='species-item'; sli.onclick=()=>focusSp(sp); ul.appendChild(sli);
+            const sli=document.createElement('li'); sli.textContent=`${sp} (${speciesCount[sp]})`} (${speciesCount[sp]})`; sli.className='species-item'; sli.onclick=()=>focusSp(sp); ul.appendChild(sli);
           });
         });
       });
