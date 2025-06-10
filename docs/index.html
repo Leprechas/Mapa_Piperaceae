@@ -114,7 +114,15 @@
                 if (!familySpecies[fam]) familySpecies[fam]=new Set(); familySpecies[fam].add(gen);
                 if (!genusSpecies[gen]) genusSpecies[gen]=new Set(); genusSpecies[gen].add(sp);
                 // marcador
-                const popup=`<b>Espécie:</b> ${d.especie}<br><b>Gênero:</b> ${d.genero||''}<br><b>Família:</b> ${d.familia||''}<br><b>Ano de coleta:</b> ${d.ano||''}<br><b>Município:</b> ${d.municipio||''}<br><b>Coletas:</b> ${d.amostras||''}<br><b>Habitat:</b> ${d.habitat||''}<br><b>Descrição:</b> ${d.descricao||''}<br><b>Notas:</b> ${d.notas||''}`;
+                const popup=`<b>Espécie:</b> ${d.especie}<br>
+                    <b>Gênero:</b> ${d.genero || ''}<br>
+                    <b>Família:</b> ${d.familia || ''}<br><br>
+                    <b>Ano de coleta:</b> ${d.ano || ''}<br>
+                    <b>Município:</b> ${d.municipio || ''}<br>
+                    <b>Coletas:</b> ${d.amostras || ''}<br>
+                    <b>Habitat:</b> ${d.habitat || ''}<br>
+                    <b>Descrição:</b> ${d.descricao || ''}<br>
+                    <b>Notas:</b> ${d.notas || ''}`;
                 const m=L.marker([d.latitude,d.longitude]).bindPopup(popup);
                 markers.addLayer(m);
                 if(!speciesMarkers[sp]) speciesMarkers[sp]=[]; speciesMarkers[sp].push(m);
@@ -131,10 +139,37 @@
             populateList();
         });
 
-    function populateList(){
-        const ul=document.getElementById('speciesList');
-        Object.keys(familySpecies).sort().forEach(fam=>{
-            const fli=document.createElement('li'); fli.textContent=`${fam} (${familyOccurrences[fam]})`; fli.className='family-header';ul.appendChild(fli);
+    function populateList() {
+        const ul = document.getElementById('speciesList');
+        ul.innerHTML = '';
+        // Percorre famílias
+        Object.keys(familySpecies).sort().forEach(fam => {
+            // Cabeçalho de família com clique
+            const fli = document.createElement('li');
+            fli.textContent = `${fam} (${familyOccurrences[fam]})`;
+            fli.className = 'family-header';
+            fli.onclick = () => focusFam(fam);
+            ul.appendChild(fli);
+            // Gêneros
+            Array.from(familySpecies[fam]).sort().forEach(gen => {
+                const gli = document.createElement('li');
+                gli.textContent = `-- ${gen} (${genusOccurrences[gen]})`;
+                gli.className = 'genus-header';
+                gli.onclick = () => focusGen(gen);
+                ul.appendChild(gli);
+                // Espécies
+                Array.from(genusSpecies[gen]).sort().forEach(sp => {
+                    const sli = document.createElement('li');
+                    sli.textContent = `---- ${sp} (${speciesOccurrences[sp]})`;
+                    sli.className = 'species-item';
+                    sli.onclick = () => focusSp(sp);
+                    ul.appendChild(sli);
+                });
+            });
+        });
+    }
+    populateList();
+(${familyOccurrences[fam]})`; fli.className='family-header';ul.appendChild(fli);
             Array.from(familySpecies[fam]).sort().forEach(gen=>{
                 const gli=document.createElement('li'); gli.textContent=`${gen} (${genusOccurrences[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen);ul.appendChild(gli);
                 Array.from(genusSpecies[gen]).sort().forEach(sp=>{
