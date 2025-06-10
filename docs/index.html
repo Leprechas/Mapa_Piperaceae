@@ -13,7 +13,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 80px; /* aumentado para incluir subtítulo */
+            height: 80px;
             background: white;
             z-index: 1002;
             display: flex;
@@ -29,7 +29,7 @@
         #map { position: absolute; top: 80px; right: 0; bottom: 0; left: 300px; }
         #sidebar {
             position: absolute;
-            top: 90px; /* ajustado abaixo do topbar */
+            top: 90px;
             left: 10px;
             bottom: 10px;
             width: 280px;
@@ -65,14 +65,9 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 <script>
-    // Inicialização do mapa
     const map = L.map('map').setView([-22.5, -53.5], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: 'Leaflet | Map data © OpenStreetMap contributors'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: 'Leaflet | Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors' }).addTo(map);
 
-    // Controle de autor
     const authorControl = L.control({position: 'bottomright'});
     authorControl.onAdd = function(map) {
         const div = L.DomUtil.create('div', 'leaflet-control');
@@ -87,35 +82,47 @@
     };
     authorControl.addTo(map);
 
+    // Adicionar botão de informação explicativa
+    const infoControl = L.control({position: 'bottomleft'});
+    infoControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
+        div.style.background = 'white';
+        div.style.width = '30px';
+        div.style.height = '30px';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'center';
+        div.style.cursor = 'pointer';
+        div.title = "As localizações das coletas são localizações aproximadas e estão associadas aos limites dos municípios, logo, se a coleta foi realizada nos limites do município de Porto Rico é muito provável que a sua localização se apresente dentro da cidade, mas sabemos que a coleta não foi realizada dentro da cidade!";
+        div.innerHTML = '<b>i</b>';
+        return div;
+    };
+    infoControl.addTo(map);
+
     const markers = L.markerClusterGroup();
     const speciesMarkers = {};
     const speciesOccurrences = {};
     const genusSpecies = {};
+    let genusOccurrences = {};
 
-    // Carregar dados JSON
     fetch('dados_piperaceae.json')
         .then(res => res.json())
         .then(data => {
             data.forEach(d => {
-                const esp = d.especie;
-                if (!esp) return;
+                const esp = d.especie; if (!esp) return;
                 speciesOccurrences[esp] = (speciesOccurrences[esp] || 0) + 1;
                 const gen = d.genero || 'Desconhecido';
-                if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
-                genusSpecies[gen].add(esp);
-                const popup = `<b>Espécie:</b> ${d.especie}<br>
-                    <b>Família:</b> ${d.familia || ''}<br>
-                    <b>Gênero:</b> ${d.genero || ''}<br>
-                    <b>Ano de coleta:</b> ${d.ano || ''}<br>
-                    <b>Município:</b> ${d.municipio || ''}<br>
-                    <b>Coletas:</b> ${d.amostras || ''}<br>
-                    <b>Habitat:</b> ${d.habitat || ''}<br>
-                    <b>Descrição:</b> ${d.descricao || ''}<br>
-                    <b>Notas:</b> ${d.notas || ''}`;
+                if (!genusSpecies[gen]) genusSpecies[gen] = new Set(); genusSpecies[gen].add(esp);
+                const popup = `<b>Espécie:</b> ${d.especie}<br><b>Família:</b> ${d.familia || ''}<br><b>Gênero:</b> ${d.genero || ''}<br><b>Ano de coleta:</b> ${d.ano || ''}<br><b>Município:</b> ${d.municipio || ''}<br><b>Coletas:</b> ${d.amostras || ''}<br><b>Habitat:</b> ${d.habitat || ''}<br><b>Descrição:</b> ${d.descricao || ''}<br><b>Notas:</b> ${d.notas || ''}`;
                 const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
                 markers.addLayer(m);
                 if (!speciesMarkers[esp]) speciesMarkers[esp] = [];
                 speciesMarkers[esp].push(m);
+            });
+            // Calcular ocorrências por gênero
+            genusOccurrences = {};
+            Object.keys(genusSpecies).forEach(gen => {
+                genusOccurrences[gen] = Array.from(genusSpecies[gen]).reduce((sum, sp) => sum + speciesOccurrences[sp], 0);
             });
             map.addLayer(markers);
             populateSpeciesList();
@@ -123,38 +130,32 @@
 
     function populateSpeciesList() {
         const list = document.getElementById('speciesList');
-        const genera = Object.keys(genusSpecies).sort();
-        genera.forEach(gen => {
+        Object.keys(genusSpecies).sort().forEach(gen => {
             const header = document.createElement('li');
-            header.textContent = gen;
-            header.className = 'genus-header';
-            list.appendChild(header);
+            header.textContent = `${gen} (${genusOccurrences[gen]})`;
+            header.className = 'genus-header'; list.appendChild(header);
             Array.from(genusSpecies[gen]).sort().forEach(sp => {
                 const li = document.createElement('li');
                 li.textContent = `${sp} (${speciesOccurrences[sp]})`;
-                li.onclick = () => focusOnSpecies(sp);
-                list.appendChild(li);
+                li.onclick = () => focusOnSpecies(sp); list.appendChild(li);
             });
         });
     }
 
     function focusOnSpecies(sp) {
         if (!speciesMarkers[sp]) return;
-        markers.clearLayers();
-        speciesMarkers[sp].forEach(m => markers.addLayer(m));
+        markers.clearLayers(); speciesMarkers[sp].forEach(m => markers.addLayer(m));
         map.fitBounds(L.featureGroup(speciesMarkers[sp]).getBounds().pad(0.25));
     }
 
     function clearSearch() {
         document.getElementById('searchBox').value = '';
-        markers.clearLayers();
-        Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
+        markers.clearLayers(); Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
         map.setView([-22.5, -53.5], 7);
     }
 
     document.getElementById('searchBox').addEventListener('input', e => {
-        const v = e.target.value.trim();
-        if (v && speciesMarkers[v]) focusOnSpecies(v);
+        const v = e.target.value.trim(); if (v && speciesMarkers[v]) focusOnSpecies(v);
     });
 </script>
 </body>
