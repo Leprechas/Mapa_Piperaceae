@@ -2,148 +2,255 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Mapa Interativo - Piperaceae</title>
+  <title>Mapa Interativo – Piperaceae</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <!-- Leaflet & plugins -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.heat/dist/leaflet-heat.css"/>
   <style>
-    body { margin:0; padding:0; }
-    #topbar { position:absolute; top:0; left:0; width:100%; height:80px; background:white; z-index:1002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:24px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    #map { position:absolute; top:80px; right:0; bottom:0; left:300px; }
-    #sidebar { position:absolute; top:90px; left:10px; bottom:10px; width:280px; background:white; padding:10px; overflow-y:auto; z-index:1001; box-shadow:0 0 5px rgba(0,0,0,0.5); }
-    input, button { width:100%; margin-bottom:5px; padding:5px; }
-    .species-list { list-style:none; padding:0; margin:0; }
-    .family-header { font-weight:bold; margin-top:10px; cursor:pointer; }
-    .genus-header { font-weight:bold; margin-left:10px; margin-top:5px; cursor:pointer; }
-    .species-item { margin-left:20px; cursor:pointer; color:#007bff; }
-    .genus-header:hover, .species-item:hover { text-decoration:underline; }
+    /* Splash screen */
+    #splash {
+      position: fixed; top: 0; left: 0; width:100%; height:100%;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      z-index:2000;
+    }
+    #splash img { max-width:300px; }
+
+    /* Topbar */
+    #topbar {
+      position:absolute; top:0; left:0; width:100%; height:80px;
+      background:#fff; z-index:1002;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-size:24px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);
+      padding-top:5px; box-sizing:border-box;
+    }
+    #topbar span { font-size:16px; font-weight:normal; }
+    #topbar img { position:absolute; top:0; right:0; height:80px; }
+
+    /* Map & sidebar */
+    #map { position:absolute; top:80px; bottom:0; right:0; left:300px; }
+    #sidebar {
+      position:absolute; top:90px; left:10px; bottom:10px; width:280px;
+      background:#fff; padding:10px; overflow-y:auto;
+      z-index:1001; box-shadow:0 0 5px rgba(0,0,0,0.5);
+    }
+    #sidebar h2 { margin-top:0; }
+    #sidebar ul { list-style:none; padding:0; margin:0; }
+    #sidebar li { margin:5px 0 5px 15px; cursor:pointer; }
+    #sidebar li.genus { font-weight:bold; margin-left:0; }
+    #sidebar input { margin-right:5px; }
+
+    /* Floating control panel */
+    #panelToggle {
+      position:absolute; top:50%; left:0; transform:translateY(-50%);
+      background:#007bff; color:#fff; padding:5px; cursor:pointer; z-index:1002;
+    }
+    #floatPanel {
+      position:absolute; top:100px; left:0; width:250px; background:#fff;
+      padding:10px; box-shadow:2px 2px 6px rgba(0,0,0,0.2);
+      transition:left .3s; z-index:1001;
+    }
+    #floatPanel.hidden { left:-260px; }
+    #floatPanel h4 { margin-top:0; }
+    #floatPanel .ctrl { margin-bottom:8px; }
+    #floatPanel .ctrl label { display:block; font-size:14px; }
+    #floatPanel .tip { margin-left:5px; color:#666; cursor:help; }
+
+    /* Attribution and info */
     .leaflet-bottom.leaflet-right .leaflet-control { right:0 !important; }
   </style>
 </head>
 <body>
+  <!-- Splash -->
+  <div id="splash"><img src="logo_lab.png" alt="NUPELIA Logo"/></div>
+
+  <!-- Topbar -->
   <div id="topbar">
     Mapa de coletas do HNUP<br>
-    <span style="font-size:16px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
-    <img src="logo_lab.png" alt="Logo NUPELIA" style="position:absolute; top:0; right:0; height:80px;">
+    <span>Laboratório de Vegetação Ripária – NUPELIA – UEM</span>
+    <img src="logo_lab.png" alt="Logo NUPELIA">
   </div>
+
+  <!-- Sidebar -->
   <div id="sidebar">
-    <h2>Buscar Espécie</h2>
-    <input type="text" id="searchBox" placeholder="Digite uma espécie...">
-    <button onclick="clearSearch()">Limpar busca</button>
-    <h3>Lista de Espécies</h3>
-    <ul id="speciesList" class="species-list"></ul>
+    <h2>Espécies</h2>
+    <ul id="speciesList"></ul>
   </div>
+
+  <!-- Floating Controls -->
+  <div id="panelToggle">▶</div>
+  <div id="floatPanel" class="hidden">
+    <h4>Controles</h4>
+    <div class="ctrl">
+      <label>Ano de coleta <span class="tip" title="Filtrar coletas por ano">?</span></label>
+      <input type="range" id="yearSlider" min="1990" max="2025" value="2025"/>
+      <div>Ate: <span id="yearValue">2025</span></div>
+    </div>
+    <div class="ctrl">
+      <button id="exportCSV">Exportar CSV <span class="tip" title="Baixar registros visíveis">?</span></button>
+    </div>
+    <div class="ctrl">
+      <label><input type="checkbox" id="toggleHeat"/> Heatmap <span class="tip" title="Exibir camada de densidade">?</span></label>
+    </div>
+    <div class="ctrl">
+      <label>Base map <span class="tip" title="Alternar camada de fundo">?</span></label>
+      <select id="baseMap">
+        <option value="osm">OSM Padrão</option>
+        <option value="sat">Satélite</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <button id="downloadMap">Download Imagem <span class="tip" title="Salvar screenshot">?</span></button>
+    </div>
+  </div>
+
   <div id="map"></div>
 
+  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    const map = L.map('map').setView([-22.5, -53.5], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: 'Leaflet | © OpenStreetMap contributors'
-    }).addTo(map);
+    // Splash hide
+    window.addEventListener('load', ()=> document.body.classList.add('loaded'));
 
-    // Controle de autor
-    const authorControl = L.control({position: 'bottomright'});
-    authorControl.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'leaflet-control');
-        div.innerHTML = 'Criado por Vitor Eduardo Girotto Barelli';
-        div.style.background = 'rgba(255,255,255,0.8)';
-        div.style.padding = '2px 6px';
-        div.style.fontSize = '12px';
-        div.style.position = 'absolute';
-        div.style.bottom = '10px';
-        div.style.right = '0px';
-        return div;
-    };
-    authorControl.addTo(map);
+    // Map init
+    const map = L.map('map').setView([-22.5,-53.5],7);
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const sat = L.tileLayer('https://{s}.sat.owm.io/sql/{z}/{x}/{y}?from=sat&appid=YOUR_KEY');
+    const clusters = L.markerClusterGroup();
+    const heat = L.heatLayer([], {radius:25,blur:15});
 
-    // Botão de informação
-    const infoControl = L.control({position: 'bottomleft'});
-    infoControl.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
-        div.style.background = 'white';
-        div.style.width = '30px';
-        div.style.height = '30px';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.justifyContent = 'center';
-        div.style.cursor = 'pointer';
-        div.title = "As localizações das coletas são aproximações...";
-        div.innerHTML = '<b>i</b>';
-        return div;
-    };
-    infoControl.addTo(map);
+    // Info button
+    L.control({position:'bottomleft'}).onAdd=()=>{
+      const div=L.DomUtil.create('div','leaflet-control');
+      div.title="As localizações das coletas são aproximadas...";
+      div.innerHTML="ℹ️";
+      div.style.background="rgba(255,255,255,0.8)";
+      div.style.padding="4px";
+      return div;
+    }.addTo(map);
 
-    const markers = L.markerClusterGroup();
-    const familySpecies = {};
-    const genusSpecies = {};
-    const speciesMarkers = {};
-    const speciesCount = {};
-    const genusCount = {};
-    const familyCount = {};
+    // Author credit
+    L.control.attribution({position:'bottomright'})
+      .addAttribution('Criado por Vitor Eduardo Girotto Barelli')
+      .addAttribution('Leaflet | Map data © OpenStreetMap contributors')
+      .addTo(map);
 
-    fetch('dados_piperaceae.json')
-      .then(res => res.json())
-      .then(data => {
-        data.forEach(d => {
-          const sp = d.especie;
-          if (!sp) return;
-          const gen = d.genero || 'Desconhecido';
-          const fam = d.familia || 'Desconhecida';
-          speciesCount[sp] = (speciesCount[sp]||0) + 1;
-          genusCount[gen]   = (genusCount[gen]||0) + 1;
-          familyCount[fam]  = (familyCount[fam]||0) + 1;
-          familySpecies[fam] = familySpecies[fam]||new Set(); familySpecies[fam].add(gen);
-          genusSpecies[gen]  = genusSpecies[gen]||new Set(); genusSpecies[gen].add(sp);
-          const popup = `<b>Espécie:</b> ${sp}<br>`+
-                        `<b>Gênero:</b> ${gen}<br>`+
-                        `<b>Família:</b> ${fam}<br><br>`+
-                        `<b>Ano de coleta:</b> ${d.ano||''}<br>`+
-                        `<b>Município:</b> ${d.municipio||''}<br>`+
-                        `<b>Coletas:</b> ${d.amostras||''}<br>`+
-                        `<b>Habitat:</b> ${d.habitat||''}<br>`+
-                        `<b>Descrição:</b> ${d.descricao||''}<br>`+
-                        `<b>Notas:</b> ${d.notas||''}`;
-          const m = L.marker([d.latitude,d.longitude]).bindPopup(popup);
-          markers.addLayer(m);
-          speciesMarkers[sp] = speciesMarkers[sp]||[];
-          speciesMarkers[sp].push(m);
-        });
-        map.addLayer(markers);
-        populateList();
+    let allData=[];
+    let speciesMap={}, genusMap={}, familyCount={}, genusCount={};
+
+    // Load JSON
+    fetch('dados_piperaceae.json').then(r=>r.json()).then(data=>{
+      allData=data;
+      data.forEach(d=>{
+        // build maps
+        familyCount[d.familia] = (familyCount[d.familia]||0)+1;
+        genusCount[d.genero]   = (genusCount[d.genero]||0)+1;
+        speciesMap[d.especie] = (speciesMap[d.especie]||[]).concat(d);
+        genreSet = genusMap[d.familia]||(genusMap[d.familia]={});
+        genreSet[d.genero] = new Set(genreSet[d.genero]||[]).add(d.especie);
       });
+      populateList();
+      updateLayers();
+    });
 
-    function populateList() {
-      const ul = document.getElementById('speciesList'); ul.innerHTML='';
-      Object.keys(familySpecies).sort().forEach(fam=>{
-        const fli=document.createElement('li');
-        fli.textContent=`${fam} (${familyCount[fam]})`;
-        fli.className='family-header'; ul.appendChild(fli);
-        Array.from(familySpecies[fam]).sort().forEach(gen=>{
-          const gli=document.createElement('li');
-          gli.textContent=`${gen} (${genusCount[gen]})`;
-          gli.className='genus-header'; gli.onclick=()=>focusGen(gen);
-          ul.appendChild(gli);
-          Array.from(genusSpecies[gen]).sort().forEach(sp=>{
-            const sli=document.createElement('li');
-            sli.textContent=`${sp} (${speciesCount[sp]})`;
-            sli.className='species-item'; sli.onclick=()=>focusSp(sp);
-            ul.appendChild(sli);
+    function populateList(){
+      const ul=document.getElementById('speciesList');
+      for(let fam in genusMap){
+        let liF=document.createElement('li');
+        liF.textContent=`${fam} (${familyCount[fam]})`; liF.className='genus';
+        liF.onclick=()=>focusFamily(fam); ul.appendChild(liF);
+        for(let gen in genusMap[fam]){
+          let liG=document.createElement('li');
+          liG.textContent=`${gen} (${genusCount[gen]})`; liG.className='genus';
+          liG.style.marginLeft='15px';
+          liG.onclick=()=>focusGenre(gen); ul.appendChild(liG);
+          Array.from(genusMap[fam][gen]).sort().forEach(sp=>{
+            let liS=document.createElement('li');
+            liS.innerHTML=`<input type="checkbox" value="${sp}"> ${sp}`;
+            liS.style.marginLeft='30px';
+            liS.querySelector('input').addEventListener('change', updateLayers);
+            ul.appendChild(liS);
           });
-        });
-      });
+        }
+      }
     }
 
-    function focusSp(sp){ markers.clearLayers(); speciesMarkers[sp].forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(speciesMarkers[sp]).getBounds().pad(0.25)); }
-    function focusGen(gen){ const arr=[]; markers.clearLayers(); Array.from(genusSpecies[gen]).forEach(sp=>speciesMarkers[sp].forEach(m=>{ markers.addLayer(m); arr.push(m);})); map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25)); }
-    function clearSearch(){ document.getElementById('searchBox').value=''; markers.clearLayers(); Object.values(speciesMarkers).flat().forEach(m=>markers.addLayer(m)); map.setView([-22.5,-53.5],7); }
-    document.getElementById('searchBox').addEventListener('input',e=>{ const v=e.target.value.trim(); if(v&&speciesMarkers[v]) focusSp(v); });
+    function updateLayers(){
+      clusters.clearLayers();
+      heat.setLatLngs([]);
+      const maxYear=+document.getElementById('yearSlider').value;
+      allData.forEach(d=>{
+        const cb=document.querySelector(`#speciesList input[value="${d.especie}"]`);
+        if(d.ano<=maxYear && (!cb || cb.checked)){
+          const m=L.marker([d.latitude,d.longitude]).bindPopup(
+            `<b>Espécie:</b> ${d.especie}<br>
+             <b>Gênero:</b>    ${d.genero}<br>
+             <b>Família:</b>  ${d.familia}<br><br>
+             <b>Ano:</b>      ${d.ano}<br>
+             <b>Município:</b>${d.municipio}<br>
+             <b>Coletas:</b>  ${d.amostras}<br>
+             <b>Habitat:</b>  ${d.habitat}<br>
+             <b>Descrição:</b>${d.descricao}<br>
+             <b>Notas:</b>    ${d.notas}`
+          );
+          clusters.addLayer(m);
+          heat.addLatLng([d.latitude,d.longitude]);
+        }
+      });
+      map.addLayer(clusters);
+    }
+
+    function focusFamily(f){
+      const pts = allData.filter(d=>d.familia===f).map(d=>[d.latitude,d.longitude]);
+      map.fitBounds(L.latLngBounds(pts).pad(0.25));
+    }
+    function focusGenre(g){
+      const pts = allData.filter(d=>d.genero===g).map(d=>[d.latitude,d.longitude]);
+      map.fitBounds(L.latLngBounds(pts).pad(0.25));
+    }
+
+    // Controls events
+    document.getElementById('yearSlider').addEventListener('input', e=>{
+      document.getElementById('yearValue').textContent=e.target.value;
+      updateLayers();
+    });
+    document.getElementById('toggleHeat').addEventListener('change', e=>{
+      if(e.target.checked) map.addLayer(heat); else map.removeLayer(heat);
+    });
+    document.getElementById('baseMap').addEventListener('change', e=>{
+      osm.remove(); sat.remove();
+      (e.target.value==='osm'?osm:sat).addTo(map);
+    });
+    document.getElementById('exportCSV').addEventListener('click',()=>{
+      let csv='especie,genero,familia,ano,municipio,amostras,habitat,descricao,notas,lat,lon\n';
+      clusters.eachLayer(m=>{
+        let c=m.getPopup().getContent().replace(/<br>/g,'\n').replace(/<b>[^<]+<\/b> /g,'');
+        const vals=c.split('\n').map(x=>x.trim());
+        csv+= vals.join(',') + '\n';
+      });
+      const a=document.createElement('a');
+      a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+      a.download='filtradas.csv'; a.click();
+    });
+    document.getElementById('downloadMap').addEventListener('click',()=>{
+      html2canvas(document.getElementById('map')).then(canvas=>{
+        const a=document.createElement('a');
+        a.href=canvas.toDataURL(); a.download='mapa.png'; a.click();
+      });
+    });
+
+    // Panel toggle
+    const panel=document.getElementById('floatPanel'),
+          toggle=document.getElementById('panelToggle');
+    toggle.addEventListener('click', ()=>{
+      panel.classList.toggle('hidden');
+      toggle.textContent = panel.classList.contains('hidden') ? '▶' : '◀';
+    });
+
   </script>
 </body>
-</html>"""
-with open('/mnt/data/mapa_interativo_com_lista_especies_final.html','w',encoding='utf-8') as f:
-    f.write(html_content)
-
-'/mnt/data/mapa_interativo_com_lista_especies_final.html'
+</html>
