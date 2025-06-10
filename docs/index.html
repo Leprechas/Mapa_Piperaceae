@@ -70,7 +70,7 @@
         div.style.alignItems = 'center';
         div.style.justifyContent = 'center';
         div.style.cursor = 'pointer';
-        div.title = "As localizações das coletas são aproximadas e estão associadas aos limites dos municípios. Se a coleta foi realizada nos limites do município de Porto Rico, sua localização pode aparecer dentro da cidade, mas não foi feita dentro do perímetro urbano.";
+        div.title = "As localizações das coletas são aproximações...";
         div.innerHTML = '<b>i</b>';
         return div;
     };
@@ -92,14 +92,11 @@
           if (!sp) return;
           const gen = d.genero || 'Desconhecido';
           const fam = d.familia || 'Desconhecida';
-          // counts
           speciesCount[sp] = (speciesCount[sp]||0) + 1;
           genusCount[gen]   = (genusCount[gen]||0) + 1;
           familyCount[fam]  = (familyCount[fam]||0) + 1;
-          // hierarquia
           familySpecies[fam] = familySpecies[fam]||new Set(); familySpecies[fam].add(gen);
           genusSpecies[gen]  = genusSpecies[gen]||new Set(); genusSpecies[gen].add(sp);
-          // marker popup
           const popup = `<b>Espécie:</b> ${sp}<br>`+
                         `<b>Gênero:</b> ${gen}<br>`+
                         `<b>Família:</b> ${fam}<br><br>`+
@@ -121,11 +118,19 @@
     function populateList() {
       const ul = document.getElementById('speciesList'); ul.innerHTML='';
       Object.keys(familySpecies).sort().forEach(fam=>{
-        const fli=document.createElement('li'); fli.textContent=`${fam} (${familyCount[fam]})`; fli.className='family-header'; ul.appendChild(fli);
+        const fli=document.createElement('li');
+        fli.textContent=`${fam} (${familyCount[fam]})`;
+        fli.className='family-header'; ul.appendChild(fli);
         Array.from(familySpecies[fam]).sort().forEach(gen=>{
-          const gli=document.createElement('li'); gli.textContent=`${gen} (${genusCount[gen]})`} (${genusCount[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen); ul.appendChild(gli);
+          const gli=document.createElement('li');
+          gli.textContent=`${gen} (${genusCount[gen]})`;
+          gli.className='genus-header'; gli.onclick=()=>focusGen(gen);
+          ul.appendChild(gli);
           Array.from(genusSpecies[gen]).sort().forEach(sp=>{
-            const sli=document.createElement('li'); sli.textContent=`${sp} (${speciesCount[sp]})`} (${speciesCount[sp]})`; sli.className='species-item'; sli.onclick=()=>focusSp(sp); ul.appendChild(sli);
+            const sli=document.createElement('li');
+            sli.textContent=`${sp} (${speciesCount[sp]})`;
+            sli.className='species-item'; sli.onclick=()=>focusSp(sp);
+            ul.appendChild(sli);
           });
         });
       });
@@ -137,4 +142,8 @@
     document.getElementById('searchBox').addEventListener('input',e=>{ const v=e.target.value.trim(); if(v&&speciesMarkers[v]) focusSp(v); });
   </script>
 </body>
-</html>
+</html>"""
+with open('/mnt/data/mapa_interativo_com_lista_especies_final.html','w',encoding='utf-8') as f:
+    f.write(html_content)
+
+'/mnt/data/mapa_interativo_com_lista_especies_final.html'
