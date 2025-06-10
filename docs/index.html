@@ -1,255 +1,127 @@
-<!DOCTYPE html>
+html_content = """<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
+  <title>Mapa Interativo - Piperaceae</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet & plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.heat/dist/leaflet-heat.css"/>
   <style>
-    /* Splash screen */
-    #splash {
-      position: fixed; top: 0; left: 0; width:100%; height:100%;
-      background:#fff; display:flex; align-items:center; justify-content:center;
-      z-index:2000;
-    }
-    #splash img { max-width:300px; }
-
-    /* Topbar */
+    body { margin:0; padding:0; }
     #topbar {
       position:absolute; top:0; left:0; width:100%; height:80px;
-      background:#fff; z-index:1002;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      font-size:24px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1);
+      background:white; z-index:1002;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      font-size:24px; font-weight:bold;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
       padding-top:5px; box-sizing:border-box;
     }
-    #topbar span { font-size:16px; font-weight:normal; }
-    #topbar img { position:absolute; top:0; right:0; height:80px; }
-
-    /* Map & sidebar */
-    #map { position:absolute; top:80px; bottom:0; right:0; left:300px; }
+    #map { position:absolute; top:80px; right:0; bottom:0; left:300px; }
     #sidebar {
       position:absolute; top:90px; left:10px; bottom:10px; width:280px;
-      background:#fff; padding:10px; overflow-y:auto;
+      background:white; padding:10px; overflow-y:auto;
       z-index:1001; box-shadow:0 0 5px rgba(0,0,0,0.5);
     }
-    #sidebar h2 { margin-top:0; }
-    #sidebar ul { list-style:none; padding:0; margin:0; }
-    #sidebar li { margin:5px 0 5px 15px; cursor:pointer; }
-    #sidebar li.genus { font-weight:bold; margin-left:0; }
-    #sidebar input { margin-right:5px; }
-
-    /* Floating control panel */
-    #panelToggle {
-      position:absolute; top:50%; left:0; transform:translateY(-50%);
-      background:#007bff; color:#fff; padding:5px; cursor:pointer; z-index:1002;
-    }
-    #floatPanel {
-      position:absolute; top:100px; left:0; width:250px; background:#fff;
-      padding:10px; box-shadow:2px 2px 6px rgba(0,0,0,0.2);
-      transition:left .3s; z-index:1001;
-    }
-    #floatPanel.hidden { left:-260px; }
-    #floatPanel h4 { margin-top:0; }
-    #floatPanel .ctrl { margin-bottom:8px; }
-    #floatPanel .ctrl label { display:block; font-size:14px; }
-    #floatPanel .tip { margin-left:5px; color:#666; cursor:help; }
-
-    /* Attribution and info */
+    input, button { width:100%; margin-bottom:5px; padding:5px; }
+    .list-header { font-weight:bold; margin-top:10px; }
+    .list-genus { margin-left:10px; }
+    .list-species { margin-left:20px; color:#007bff; cursor:pointer; }
     .leaflet-bottom.leaflet-right .leaflet-control { right:0 !important; }
   </style>
 </head>
 <body>
-  <!-- Splash -->
-  <div id="splash"><img src="logo_lab.png" alt="NUPELIA Logo"/></div>
-
-  <!-- Topbar -->
   <div id="topbar">
     Mapa de coletas do HNUP<br>
-    <span>Laboratório de Vegetação Ripária – NUPELIA – UEM</span>
-    <img src="logo_lab.png" alt="Logo NUPELIA">
+    <span style="font-size:16px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
   </div>
-
-  <!-- Sidebar -->
   <div id="sidebar">
-    <h2>Espécies</h2>
-    <ul id="speciesList"></ul>
+    <h2>Filtros</h2>
+    <button onclick="clearAll()">Limpar seleção</button>
+    <h3>Famílias</h3>
+    <ul id="filterList" style="list-style:none; padding:0; margin:0;"></ul>
   </div>
-
-  <!-- Floating Controls -->
-  <div id="panelToggle">▶</div>
-  <div id="floatPanel" class="hidden">
-    <h4>Controles</h4>
-    <div class="ctrl">
-      <label>Ano de coleta <span class="tip" title="Filtrar coletas por ano">?</span></label>
-      <input type="range" id="yearSlider" min="1990" max="2025" value="2025"/>
-      <div>Ate: <span id="yearValue">2025</span></div>
-    </div>
-    <div class="ctrl">
-      <button id="exportCSV">Exportar CSV <span class="tip" title="Baixar registros visíveis">?</span></button>
-    </div>
-    <div class="ctrl">
-      <label><input type="checkbox" id="toggleHeat"/> Heatmap <span class="tip" title="Exibir camada de densidade">?</span></label>
-    </div>
-    <div class="ctrl">
-      <label>Base map <span class="tip" title="Alternar camada de fundo">?</span></label>
-      <select id="baseMap">
-        <option value="osm">OSM Padrão</option>
-        <option value="sat">Satélite</option>
-      </select>
-    </div>
-    <div class="ctrl">
-      <button id="downloadMap">Download Imagem <span class="tip" title="Salvar screenshot">?</span></button>
-    </div>
-  </div>
-
   <div id="map"></div>
 
-  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    // Splash hide
-    window.addEventListener('load', ()=> document.body.classList.add('loaded'));
+    const map = L.map('map').setView([-22.5, -53.5], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:18, attribution:'Leaflet | © OpenStreetMap contributors'
+    }).addTo(map);
 
-    // Map init
-    const map = L.map('map').setView([-22.5,-53.5],7);
-    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const sat = L.tileLayer('https://{s}.sat.owm.io/sql/{z}/{x}/{y}?from=sat&appid=YOUR_KEY');
-    const clusters = L.markerClusterGroup();
-    const heat = L.heatLayer([], {radius:25,blur:15});
-
-    // Info button
-    L.control({position:'bottomleft'}).onAdd=()=>{
-      const div=L.DomUtil.create('div','leaflet-control');
-      div.title="As localizações das coletas são aproximadas...";
-      div.innerHTML="ℹ️";
-      div.style.background="rgba(255,255,255,0.8)";
-      div.style.padding="4px";
-      return div;
-    }.addTo(map);
-
-    // Author credit
-    L.control.attribution({position:'bottomright'})
-      .addAttribution('Criado por Vitor Eduardo Girotto Barelli')
-      .addAttribution('Leaflet | Map data © OpenStreetMap contributors')
-      .addTo(map);
-
+    const markers = L.markerClusterGroup();
+    const speciesMarkers = {}, genusMembers = {}, familyMembers = {};
     let allData=[];
-    let speciesMap={}, genusMap={}, familyCount={}, genusCount={};
 
-    // Load JSON
     fetch('dados_piperaceae.json').then(r=>r.json()).then(data=>{
-      allData=data;
+      allData = data;
       data.forEach(d=>{
-        // build maps
-        familyCount[d.familia] = (familyCount[d.familia]||0)+1;
-        genusCount[d.genero]   = (genusCount[d.genero]||0)+1;
-        speciesMap[d.especie] = (speciesMap[d.especie]||[]).concat(d);
-        genreSet = genusMap[d.familia]||(genusMap[d.familia]={});
-        genreSet[d.genero] = new Set(genreSet[d.genero]||[]).add(d.especie);
+        const sp=d.especie, gen=d.genero, fam=d.familia;
+        const m = L.marker([d.latitude,d.longitude]).bindPopup(
+          `<b>Espécie:</b>${sp}<br><b>Gênero:</b>${gen}<br><b>Família:</b>${fam}`
+        );
+        markers.addLayer(m);
+        speciesMarkers[sp]=speciesMarkers[sp]||[]; speciesMarkers[sp].push(m);
+        genusMembers[gen]=genusMembers[gen]||new Set(); genusMembers[gen].add(sp);
+        familyMembers[fam]=familyMembers[fam]||new Set(); familyMembers[fam].add(gen);
       });
-      populateList();
-      updateLayers();
+      map.addLayer(markers);
+      buildFilterList();
     });
 
-    function populateList(){
-      const ul=document.getElementById('speciesList');
-      for(let fam in genusMap){
-        let liF=document.createElement('li');
-        liF.textContent=`${fam} (${familyCount[fam]})`; liF.className='genus';
-        liF.onclick=()=>focusFamily(fam); ul.appendChild(liF);
-        for(let gen in genusMap[fam]){
-          let liG=document.createElement('li');
-          liG.textContent=`${gen} (${genusCount[gen]})`; liG.className='genus';
-          liG.style.marginLeft='15px';
-          liG.onclick=()=>focusGenre(gen); ul.appendChild(liG);
-          Array.from(genusMap[fam][gen]).sort().forEach(sp=>{
-            let liS=document.createElement('li');
-            liS.innerHTML=`<input type="checkbox" value="${sp}"> ${sp}`;
-            liS.style.marginLeft='30px';
-            liS.querySelector('input').addEventListener('change', updateLayers);
-            ul.appendChild(liS);
+    function buildFilterList(){
+      const ul=document.getElementById('filterList');
+      Object.keys(familyMembers).sort().forEach(fam=>{
+        const famLi=document.createElement('li');
+        famLi.innerHTML=`<label><input type="checkbox" class="fam" value="${fam}"> ${fam}</label>`;
+        ul.appendChild(famLi);
+        familyMembers[fam].forEach(gen=>{
+          const genLi=document.createElement('li');
+          genLi.innerHTML=`<label class="list-genus"><input type="checkbox" class="gen" data-fam="${fam}" value="${gen}"> ${gen}</label>`;
+          ul.appendChild(genLi);
+          genusMembers[gen].forEach(sp=>{
+            const spLi=document.createElement('li');
+            spLi.innerHTML=`<label class="list-species"><input type="checkbox" class="sp" data-gen="${gen}" value="${sp}"> ${sp}</label>`;
+            ul.appendChild(spLi);
           });
-        }
+        });
+      });
+      document.querySelectorAll('#filterList input').forEach(cb=>{
+        cb.addEventListener('change',updateFilters);
+      });
+    }
+
+    function updateFilters(){
+      markers.clearLayers();
+      const selFams=[...document.querySelectorAll('.fam:checked')].map(i=>i.value);
+      const selGens=[...document.querySelectorAll('.gen:checked')].map(i=>i.value);
+      const selSps =[...document.querySelectorAll('.sp:checked')].map(i=>i.value);
+      let toShow=new Set();
+      // if species checked
+      if(selSps.length>0) selSps.forEach(sp=>speciesMarkers[sp].forEach(m=>toShow.add(m)));
+      // else if genus checked
+      if(selGens.length>0) selGens.forEach(gen=>genusMembers[gen].forEach(sp=>speciesMarkers[sp].forEach(m=>toShow.add(m))));
+      // else if family checked
+      if(selFams.length>0) selFams.forEach(fam=>familyMembers[fam].forEach(gen=>genusMembers[gen].forEach(sp=>speciesMarkers[sp].forEach(m=>toShow.add(m)))));
+      // if none, show all
+      if(selSps.length+selGens.length+selFams.length===0){
+        allData.forEach(d=>speciesMarkers[d.especie].forEach(m=>toShow.add(m)));
       }
+      toShow.forEach(m=>markers.addLayer(m));
+      if(toShow.size) map.fitBounds(L.featureGroup([...toShow]).getBounds().pad(0.25));
     }
 
-    function updateLayers(){
-      clusters.clearLayers();
-      heat.setLatLngs([]);
-      const maxYear=+document.getElementById('yearSlider').value;
-      allData.forEach(d=>{
-        const cb=document.querySelector(`#speciesList input[value="${d.especie}"]`);
-        if(d.ano<=maxYear && (!cb || cb.checked)){
-          const m=L.marker([d.latitude,d.longitude]).bindPopup(
-            `<b>Espécie:</b> ${d.especie}<br>
-             <b>Gênero:</b>    ${d.genero}<br>
-             <b>Família:</b>  ${d.familia}<br><br>
-             <b>Ano:</b>      ${d.ano}<br>
-             <b>Município:</b>${d.municipio}<br>
-             <b>Coletas:</b>  ${d.amostras}<br>
-             <b>Habitat:</b>  ${d.habitat}<br>
-             <b>Descrição:</b>${d.descricao}<br>
-             <b>Notas:</b>    ${d.notas}`
-          );
-          clusters.addLayer(m);
-          heat.addLatLng([d.latitude,d.longitude]);
-        }
-      });
-      map.addLayer(clusters);
+    function clearAll(){
+      document.querySelectorAll('#filterList input').forEach(i=>i.checked=false);
+      updateFilters();
     }
-
-    function focusFamily(f){
-      const pts = allData.filter(d=>d.familia===f).map(d=>[d.latitude,d.longitude]);
-      map.fitBounds(L.latLngBounds(pts).pad(0.25));
-    }
-    function focusGenre(g){
-      const pts = allData.filter(d=>d.genero===g).map(d=>[d.latitude,d.longitude]);
-      map.fitBounds(L.latLngBounds(pts).pad(0.25));
-    }
-
-    // Controls events
-    document.getElementById('yearSlider').addEventListener('input', e=>{
-      document.getElementById('yearValue').textContent=e.target.value;
-      updateLayers();
-    });
-    document.getElementById('toggleHeat').addEventListener('change', e=>{
-      if(e.target.checked) map.addLayer(heat); else map.removeLayer(heat);
-    });
-    document.getElementById('baseMap').addEventListener('change', e=>{
-      osm.remove(); sat.remove();
-      (e.target.value==='osm'?osm:sat).addTo(map);
-    });
-    document.getElementById('exportCSV').addEventListener('click',()=>{
-      let csv='especie,genero,familia,ano,municipio,amostras,habitat,descricao,notas,lat,lon\n';
-      clusters.eachLayer(m=>{
-        let c=m.getPopup().getContent().replace(/<br>/g,'\n').replace(/<b>[^<]+<\/b> /g,'');
-        const vals=c.split('\n').map(x=>x.trim());
-        csv+= vals.join(',') + '\n';
-      });
-      const a=document.createElement('a');
-      a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-      a.download='filtradas.csv'; a.click();
-    });
-    document.getElementById('downloadMap').addEventListener('click',()=>{
-      html2canvas(document.getElementById('map')).then(canvas=>{
-        const a=document.createElement('a');
-        a.href=canvas.toDataURL(); a.download='mapa.png'; a.click();
-      });
-    });
-
-    // Panel toggle
-    const panel=document.getElementById('floatPanel'),
-          toggle=document.getElementById('panelToggle');
-    toggle.addEventListener('click', ()=>{
-      panel.classList.toggle('hidden');
-      toggle.textContent = panel.classList.contains('hidden') ? '▶' : '◀';
-    });
-
   </script>
 </body>
-</html>
+</html>"""
+
+with open('/mnt/data/mapa_multiselect.html','w',encoding='utf-8') as f:
+    f.write(html_content)
+
+'/mnt/data/mapa_multiselect.html'
