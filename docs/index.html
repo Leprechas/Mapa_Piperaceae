@@ -42,9 +42,10 @@
         input[type="text"] { width: 100%; padding: 5px; margin-bottom: 5px; }
         button { width: 100%; padding: 5px; margin-bottom: 10px; }
         .species-list { list-style: none; padding: 0; margin: 0; }
-        .genus-header { font-weight: bold; margin-top: 10px; margin-left: 0; }
-        .species-list li { margin-left: 15px; cursor: pointer; color: #007bff; }
-        .species-list li:hover { text-decoration: underline; }
+        .family-header { font-weight: bold; margin-top: 10px; }
+        .genus-header { font-weight: bold; margin-left: 10px; margin-top: 5px; }
+        .species-item { margin-left: 20px; cursor: pointer; color: #007bff; }
+        .species-item:hover { text-decoration: underline; }
         .leaflet-bottom.leaflet-right .leaflet-control { right: 0px !important; }
     </style>
 </head>
@@ -68,32 +69,26 @@
     const map = L.map('map').setView([-22.5, -53.5], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: 'Leaflet | Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors' }).addTo(map);
 
+    // Autor
     const authorControl = L.control({position: 'bottomright'});
-    authorControl.onAdd = function(map) {
+    authorControl.onAdd = map => {
         const div = L.DomUtil.create('div', 'leaflet-control');
         div.innerHTML = 'Criado por Vitor Eduardo Girotto Barelli';
         div.style.background = 'rgba(255,255,255,0.8)';
         div.style.padding = '2px 6px';
         div.style.fontSize = '12px';
-        div.style.position = 'absolute';
-        div.style.bottom = '10px';
-        div.style.right = '0px';
+        div.style.position = 'absolute'; div.style.bottom = '10px'; div.style.right = '0';
         return div;
     };
     authorControl.addTo(map);
 
-    // Adicionar botão de informação explicativa
+    // Info
     const infoControl = L.control({position: 'bottomleft'});
-    infoControl.onAdd = function(map) {
+    infoControl.onAdd = map => {
         const div = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
-        div.style.background = 'white';
-        div.style.width = '30px';
-        div.style.height = '30px';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.justifyContent = 'center';
-        div.style.cursor = 'pointer';
-        div.title = "As localizações das coletas são localizações aproximadas e estão associadas aos limites dos municípios, logo, se a coleta foi realizada nos limites do município de Porto Rico é muito provável que a sua localização se apresente dentro da cidade, mas sabemos que a coleta não foi realizada dentro da cidade!";
+        div.style.background = 'white'; div.style.width = '30px'; div.style.height = '30px';
+        div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.justifyContent = 'center'; div.style.cursor='pointer';
+        div.title = "As localizações das coletas são localizações aproximadas e estão associadas aos limites dos municípios. Se a coleta foi realizada nos limites do município de Porto Rico, sua localização pode aparecer dentro da cidade, mas não foi efetuada dentro do perímetro urbano.";
         div.innerHTML = '<b>i</b>';
         return div;
     };
@@ -103,60 +98,56 @@
     const speciesMarkers = {};
     const speciesOccurrences = {};
     const genusSpecies = {};
+    const familySpecies = {};
+    let familyOccurrences = {};
     let genusOccurrences = {};
 
     fetch('dados_piperaceae.json')
-        .then(res => res.json())
+        .then(r => r.json())
         .then(data => {
             data.forEach(d => {
-                const esp = d.especie; if (!esp) return;
-                speciesOccurrences[esp] = (speciesOccurrences[esp] || 0) + 1;
-                const gen = d.genero || 'Desconhecido';
-                if (!genusSpecies[gen]) genusSpecies[gen] = new Set(); genusSpecies[gen].add(esp);
-                const popup = `<b>Espécie:</b> ${d.especie}<br><b>Família:</b> ${d.familia || ''}<br><b>Gênero:</b> ${d.genero || ''}<br><b>Ano de coleta:</b> ${d.ano || ''}<br><b>Município:</b> ${d.municipio || ''}<br><b>Coletas:</b> ${d.amostras || ''}<br><b>Habitat:</b> ${d.habitat || ''}<br><b>Descrição:</b> ${d.descricao || ''}<br><b>Notas:</b> ${d.notas || ''}`;
-                const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
+                const sp = d.especie; if (!sp) return;
+                speciesOccurrences[sp] = (speciesOccurrences[sp]||0)+1;
+                const gen = d.genero||'Desconhecido';
+                const fam= d.familia||'Desconhecida';
+                // organizar
+                if (!familySpecies[fam]) familySpecies[fam]=new Set(); familySpecies[fam].add(gen);
+                if (!genusSpecies[gen]) genusSpecies[gen]=new Set(); genusSpecies[gen].add(sp);
+                // marcador
+                const popup=`<b>Espécie:</b> ${d.especie}<br><b>Gênero:</b> ${d.genero||''}<br><b>Família:</b> ${d.familia||''}<br><b>Ano de coleta:</b> ${d.ano||''}<br><b>Município:</b> ${d.municipio||''}<br><b>Coletas:</b> ${d.amostras||''}<br><b>Habitat:</b> ${d.habitat||''}<br><b>Descrição:</b> ${d.descricao||''}<br><b>Notas:</b> ${d.notas||''}`;
+                const m=L.marker([d.latitude,d.longitude]).bindPopup(popup);
                 markers.addLayer(m);
-                if (!speciesMarkers[esp]) speciesMarkers[esp] = [];
-                speciesMarkers[esp].push(m);
+                if(!speciesMarkers[sp]) speciesMarkers[sp]=[]; speciesMarkers[sp].push(m);
             });
-            // Calcular ocorrências por gênero
-            genusOccurrences = {};
-            Object.keys(genusSpecies).forEach(gen => {
-                genusOccurrences[gen] = Array.from(genusSpecies[gen]).reduce((sum, sp) => sum + speciesOccurrences[sp], 0);
+            // ocorrências géneros
+            Object.keys(genusSpecies).forEach(gen=> {
+                let sum=0; genusSpecies[gen].forEach(sp=> sum+= speciesOccurrences[sp]); genusOccurrences[gen]=sum;
+            });
+            // ocorrências famílias
+            Object.keys(familySpecies).forEach(fam=>{
+                let sum=0; familySpecies[fam].forEach(gen=> sum+= genusOccurrences[gen]); familyOccurrences[fam]=sum;
             });
             map.addLayer(markers);
-            populateSpeciesList();
+            populateList();
         });
 
-    function populateSpeciesList() {
-        const list = document.getElementById('speciesList');
-        Object.keys(genusSpecies).sort().forEach(gen => {
-            const header = document.createElement('li');
-            header.textContent = `${gen} (${genusOccurrences[gen]})`;
-            header.className = 'genus-header'; list.appendChild(header);
-            Array.from(genusSpecies[gen]).sort().forEach(sp => {
-                const li = document.createElement('li');
-                li.textContent = `${sp} (${speciesOccurrences[sp]})`;
-                li.onclick = () => focusOnSpecies(sp); list.appendChild(li);
+    function populateList(){
+        const ul=document.getElementById('speciesList');
+        Object.keys(familySpecies).sort().forEach(fam=>{
+            const fli=document.createElement('li'); fli.textContent=`${fam} (${familyOccurrences[fam]})`; fli.className='family-header';ul.appendChild(fli);
+            Array.from(familySpecies[fam]).sort().forEach(gen=>{
+                const gli=document.createElement('li'); gli.textContent=`${gen} (${genusOccurrences[gen]})`; gli.className='genus-header'; gli.onclick=()=>focusGen(gen);ul.appendChild(gli);
+                Array.from(genusSpecies[gen]).sort().forEach(sp=>{
+                    const sli=document.createElement('li'); sli.textContent=`${sp} (${speciesOccurrences[sp]})`; sli.className='species-item'; sli.onclick=()=>focusSp(sp);ul.appendChild(sli);
+                });
             });
         });
     }
-
-    function focusOnSpecies(sp) {
-        if (!speciesMarkers[sp]) return;
-        markers.clearLayers(); speciesMarkers[sp].forEach(m => markers.addLayer(m));
-        map.fitBounds(L.featureGroup(speciesMarkers[sp]).getBounds().pad(0.25));
-    }
-
-    function clearSearch() {
-        document.getElementById('searchBox').value = '';
-        markers.clearLayers(); Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
-        map.setView([-22.5, -53.5], 7);
-    }
-
-    document.getElementById('searchBox').addEventListener('input', e => {
-        const v = e.target.value.trim(); if (v && speciesMarkers[v]) focusOnSpecies(v);
-    });
+    function focusSp(sp){ if(!speciesMarkers[sp])return; markers.clearLayers(); speciesMarkers[sp].forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(speciesMarkers[sp]).getBounds().pad(0.25)); }
+    function focusGen(gen){ if(!genusSpecies[gen])return; let arr=[]; genusSpecies[gen].forEach(sp=> arr=arr.concat(speciesMarkers[sp])); markers.clearLayers(); arr.forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25)); }
+    function focusFam(fam){ if(!familySpecies[fam])return; let arr=[]; familySpecies[fam].forEach(gen=> genusSpecies[gen].forEach(sp=> arr=arr.concat(speciesMarkers[sp]))); markers.clearLayers(); arr.forEach(m=>markers.addLayer(m)); map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25)); }
+    function clearSearch(){ document.getElementById('searchBox').value=''; markers.clearLayers(); Object.values(speciesMarkers).flat().forEach(m=>markers.addLayer(m)); map.setView([-22.5,-53.5],7);}    
+    document.getElementById('searchBox').addEventListener('input',e=>{const v=e.target.value.trim(); if(v&&speciesMarkers[v]) focusSp(v);});
 </script>
 </body>
 </html>
