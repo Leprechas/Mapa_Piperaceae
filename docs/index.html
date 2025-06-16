@@ -84,11 +84,11 @@
     const familyCount = {};
 
     // Carrega dados e popula mapa/lista
-    fetch('dados_piperaceae.json')
+    fetch('dados.json')
       .then(res => res.json())
       .then(data => {
         data.forEach(d => {
-          const sp = d.especie || '';
+          const sp = d.nome || '';
           if (!sp) return;
           const gen = d.genero || 'Desconhecido';
           const fam = d.familia || 'Desconhecida';
