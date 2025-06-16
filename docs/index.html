@@ -95,15 +95,12 @@
 
           // Contagens
           speciesCount[sp] = (speciesCount[sp]||0) + 1;
-          genusCount[gen]   = (genusCount[gen]||0) + 1;
-          familyCount[fam]  = (familyCount[fam]||0) + 1;
-
-          // Estrutura hierárquica
+          // Monta hierarquia família→gênero e gênero→espécie
           if (!familySpecies[fam]) familySpecies[fam] = new Set();
           familySpecies[fam].add(gen);
-          if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
+          if (!genusSpecies[gen])  genusSpecies[gen]   = new Set();
           genusSpecies[gen].add(sp);
-
+      
           // Criação de popup e marcador
           const popup = `<b>Espécie:</b> ${sp}<br>` +
                         `<b>Gênero:</b> ${gen}<br>` +
@@ -119,6 +116,24 @@
           if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
           speciesMarkers[sp].push(m);
         });
+
+        // 2) Recalcula genusCount somando speciesCount de cada espécie
+        Object.keys(genusSpecies).forEach(gen => {
+          genusCount[gen] = 0;
+          genusSpecies[gen].forEach(sp => {
+            genusCount[gen] += speciesCount[sp] || 0;
+          });
+        });
+
+        // 3) Recalcula familyCount somando genusCount de cada gênero
+        Object.keys(familySpecies).forEach(fam => {
+          familyCount[fam] = 0;
+          familySpecies[fam].forEach(gen => {
+            familyCount[fam] += genusCount[gen] || 0;
+          });
+        });
+        
+        // 4) Agora sim adiciona ao mapa e popula a lista
         map.addLayer(markers);
         populateList();
       });
