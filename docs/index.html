@@ -105,12 +105,12 @@
           const popup = `<b>Espécie:</b> ${sp}<br>` +
                         `<b>Gênero:</b> ${gen}<br>` +
                         `<b>Família:</b> ${fam}<br><br>` +
-                        `<b>Ano de coleta:</b> ${d.ano||''}<br>` +
-                        `<b>Município:</b> ${d.municipio||''}<br>` +
-                        `<b>Coletas:</b> ${d.amostras||''}<br>` +
-                        `<b>Habitat:</b> ${d.habitat||''}<br>` +
-                        `<b>Descrição:</b> ${d.descricao||''}<br>` +
-                        `<b>Notas:</b> ${d.notas||''}`;
+                        `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
+                        `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
+                        `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
+                        `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
+                        `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
+                        `<b>Notas:</b> ${d.notas || '—'}`;
           const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
           markers.addLayer(m);
           if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
