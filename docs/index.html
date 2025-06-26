@@ -152,6 +152,7 @@
           <div id="yearFilter" class="filter-options hidden"></div>
           <div class="filter-header" onclick="toggleFilter('municipioFilter')">Localização</div>
           <div id="municipioFilter" class="filter-options hidden"></div>
+          <button onclick="clearFilters()" style="...">Limpar filtros</button>
         </div>
       </div>
     </div>
@@ -270,6 +271,7 @@
     function populateFilters(anos, municipios) {
       const yearFilter = document.getElementById('yearFilter');
       [...anos].sort((a, b) => a - b).forEach(ano => {
+        if (ano === 0 || ano === '0') return;
         const label = document.createElement('label');
         label.className = 'filter-checkbox';
         label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
@@ -389,6 +391,11 @@
       markers.clearLayers();
       Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
       map.setView([-22.5, -53.5], 2);
+    }
+    function clearFilters() {
+      document.querySelectorAll('input[name="year"]:checked, input[name="municipio"]:checked')
+        .forEach(input => input.checked = false);
+      applyFilters();
     }
   </script>
 </body>
