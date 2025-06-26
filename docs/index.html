@@ -2,79 +2,148 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Mapa Interativo - Piperaceae</title>
+  <title>Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
-    body { margin:0; padding:0; }
-    #topbar { position:absolute; top:0; left:0; width:100%; height:80px; background:white; z-index:1002; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:24px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    #map { position:absolute; top:80px; right:0; bottom:0; left:300px; }
-    #sidebar { position:absolute; top:90px; left:10px; bottom:10px; width:280px; background:white; padding:10px; overflow-y:auto; z-index:1001; box-shadow:0 0 5px rgba(0,0,0,0.5); }
-    input, button { width:100%; margin-bottom:5px; padding:5px; }
-    .species-list { list-style:none; padding:0; margin:0; }
-    .family-header { font-weight:bold; margin-top:10px; cursor:pointer; color:black; }
-    .genus-header { font-weight:bold; margin-left:10px; margin-top:5px; cursor:pointer; color:#006400; }
-    .species-item { margin-left:20px; cursor:pointer; color:#007bff; }
-    .genus-header:hover, .species-item:hover, .family-header:hover { text-decoration:underline; }
-    .leaflet-bottom.leaflet-right .leaflet-control { right:0 !important; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #EAF3E1;
+    }
+    #header {
+      background-color: #BBD3A2;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #logo-left {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      height: 60px;
+    }
+    #logo-right {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      height: 60px;
+    }
+    #container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 10px;
+      padding: 10px;
+    }
+    #sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .box {
+      background-color: #F2F7F1;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .box-title {
+      background-color: #6B8E6F;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 10px 10px 0 0;
+      font-weight: bold;
+    }
+    #map {
+      background-color: #6B8E6F;
+      border-radius: 10px;
+      height: 500px;
+    }
+    #info, #links {
+      grid-column: 1 / -1;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    .leaflet-control-attribution {
+      display: none;
+    }
+    .genus-header, .species-item, .family-header {
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .genus-header:hover, .species-item:hover, .family-header:hover {
+      text-decoration: underline;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <div id="topbar">
-    Mapa de coletas do HNUP<br>
-    <span style="font-size:16px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
-    <img src="logo_lab.png" alt="Logo NUPELIA" style="position:absolute; top:0; right:0; height:80px;">
+  <div id="header">
+    <img id="logo-left" src="logo_lab.png" alt="Logo NUPELIA">
+    Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)<br>
+    <span style="font-size:14px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
+    <img id="logo-right" src="logo_uem.png" alt="Logo UEM">
   </div>
-  <div id="sidebar">
-    <h2>Buscar Espécie</h2>
-    <input type="text" id="searchBox" placeholder="Digite uma espécie...">
-    <button onclick="clearSearch()">Limpar busca</button>
-    <h3>Lista de Espécies</h3>
-    <ul id="speciesList" class="species-list"></ul>
+
+  <div id="container">
+    <div id="sidebar">
+      <div class="box">
+        <div class="box-title">Barra de pesquisa de espécie</div>
+        <input type="text" id="searchBox" placeholder="Digite uma espécie...">
+        <div id="speciesList" style="overflow-y:auto; height:150px;"></div>
+      </div>
+      <div class="box">
+        <div class="box-title">Filtros</div>
+        <ul>
+          <li>Filtro 1</li>
+          <li>Filtro 2</li>
+          <li>Filtro 3</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="box" id="map"></div>
+
+    <div class="box" id="info">
+      <div class="box-title">Informações relevantes</div>
+      <ul>
+        <li>Info 1</li>
+        <li>Info 2</li>
+        <li>Info 3</li>
+        <li>Info 4</li>
+      </ul>
+    </div>
+
+    <div class="box" id="links">
+      <div class="box-title">Links Importantes</div>
+      <ul>
+        <li>Site 1 - Link 1</li>
+        <li>Site 2 - Link 2</li>
+        <li>Site 3 - Link 3</li>
+      </ul>
+    </div>
   </div>
-  <div id="map"></div>
+
+  <div style="position:fixed; bottom:10px; right:10px; font-size:12px; background:#F2F7F1; padding:5px; border-radius:8px;">
+    Criado por Vitor Eduardo Girotto Barelli
+  </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-    // Inicialização do mapa
-    const map = L.map('map').setView([-22.5, -53.5], 7);
+    const map = L.map('map').setView([-22.5, -53.5], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: 'Leaflet | © OpenStreetMap contributors'
     }).addTo(map);
 
-    // Controle de autor
-    const authorControl = L.control({position: 'bottomright'});
-    authorControl.onAdd = () => {
-      const div = L.DomUtil.create('div', 'leaflet-control');
-      div.innerHTML = 'Criado por Vitor Eduardo Girotto Barelli';
-      div.style.background = 'rgba(255,255,255,0.8)';
-      div.style.padding = '2px 6px';
-      div.style.fontSize = '12px';
-      return div;
-    };
-    authorControl.addTo(map);
-
-    // Botão de informação
-    const infoControl = L.control({position: 'bottomleft'});
-    infoControl.onAdd = () => {
-      const div = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
-      div.style.background = 'white';
-      div.style.width = '30px';
-      div.style.height = '30px';
-      div.style.display = 'flex';
-      div.style.alignItems = 'center';
-      div.style.justifyContent = 'center';
-      div.style.cursor = 'pointer';
-      div.title = "As localizações das coletas são localizações aproximadas e estão associadas aos limites dos municípios, logo, se a coleta foi realizada nos limites do município de Porto Rico é muito provável que a sua localização se apresente dentro da cidade, mas sabemos que a coleta *não* foi realizada dentro do perímetro urbano";
-      div.innerHTML = '<b>i</b>';
-      return div;
-    };
-    infoControl.addTo(map);
-
-    // Estruturas de dados
     const markers = L.markerClusterGroup();
     const familySpecies = {};
     const genusSpecies = {};
@@ -83,7 +152,6 @@
     const genusCount = {};
     const familyCount = {};
 
-    // Carrega dados e popula mapa/lista
     fetch('dados1.json')
       .then(res => res.json())
       .then(data => {
@@ -93,31 +161,26 @@
           const gen = d.genero || 'Desconhecido';
           const fam = d.familia || 'Desconhecida';
 
-          // Contagens
           speciesCount[sp] = (speciesCount[sp]||0) + 1;
-          // Monta hierarquia família→gênero e gênero→espécie
           if (!familySpecies[fam]) familySpecies[fam] = new Set();
           familySpecies[fam].add(gen);
-          if (!genusSpecies[gen])  genusSpecies[gen]   = new Set();
+          if (!genusSpecies[gen])  genusSpecies[gen] = new Set();
           genusSpecies[gen].add(sp);
-      
-          // Criação de popup e marcador
-          const popup = `<b>Espécie:</b> ${sp}<br>` +
-                        `<b>Gênero:</b> ${gen}<br>` +
-                        `<b>Família:</b> ${fam}<br><br>` +
+
+          const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
                         `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
                         `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
                         `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
                         `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
                         `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
                         `<b>Notas:</b> ${d.notas || '—'}`;
+
           const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
           markers.addLayer(m);
           if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
           speciesMarkers[sp].push(m);
         });
 
-        // 2) Recalcula genusCount somando speciesCount de cada espécie
         Object.keys(genusSpecies).forEach(gen => {
           genusCount[gen] = 0;
           genusSpecies[gen].forEach(sp => {
@@ -125,20 +188,17 @@
           });
         });
 
-        // 3) Recalcula familyCount somando genusCount de cada gênero
         Object.keys(familySpecies).forEach(fam => {
           familyCount[fam] = 0;
           familySpecies[fam].forEach(gen => {
             familyCount[fam] += genusCount[gen] || 0;
           });
         });
-        
-        // 4) Agora sim adiciona ao mapa e popula a lista
+
         map.addLayer(markers);
         populateList();
       });
 
-    // Funções de foco
     function focusSp(sp) {
       markers.clearLayers();
       const arr = [];
@@ -150,66 +210,65 @@
       markers.clearLayers();
       const arr = [];
       Array.from(genusSpecies[gen]||[]).forEach(sp => {
-        (speciesMarkers[sp]||[]).forEach(m => {
-          markers.addLayer(m);
-          arr.push(m);
-        });
+        (speciesMarkers[sp]||[]).forEach(m => { markers.addLayer(m); arr.push(m); });
       });
       if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
     }
 
-    // === Nova função para foco em família ===
     function focusFam(fam) {
       markers.clearLayers();
       const arr = [];
       Array.from(familySpecies[fam]||[]).forEach(gen => {
         Array.from(genusSpecies[gen]||[]).forEach(sp => {
-          (speciesMarkers[sp]||[]).forEach(m => {
-            markers.addLayer(m);
-            arr.push(m);
-          });
+          (speciesMarkers[sp]||[]).forEach(m => { markers.addLayer(m); arr.push(m); });
         });
       });
       if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
     }
 
-    // Função atualizada de população da lista
     function populateList() {
       const ul = document.getElementById('speciesList');
       ul.innerHTML = '';
       Object.keys(familySpecies).sort().forEach(fam => {
-        // Família
-        const fli = document.createElement('li');
+        const fli = document.createElement('div');
         fli.textContent = `${fam} (${familyCount[fam]})`;
         fli.className = 'family-header';
-        fli.onclick = () => focusFam(fam);
+        fli.style.fontWeight = 'bold';
+        const famBlock = document.createElement('div');
+
+        fli.onclick = () => {
+          famBlock.classList.toggle('hidden');
+          focusFam(fam);
+        };
         ul.appendChild(fli);
-        // Gêneros
+        ul.appendChild(famBlock);
+
         Array.from(familySpecies[fam]).sort().forEach(gen => {
-          const gli = document.createElement('li');
+          const gli = document.createElement('div');
           gli.textContent = `${gen} (${genusCount[gen]})`;
           gli.className = 'genus-header';
-          gli.onclick = () => focusGen(gen);
-          ul.appendChild(gli);
-          // Espécies
+          const genBlock = document.createElement('div');
+          genBlock.style.marginLeft = '15px';
+
+          gli.onclick = () => {
+            genBlock.classList.toggle('hidden');
+            focusGen(gen);
+          };
+          famBlock.appendChild(gli);
+          famBlock.appendChild(genBlock);
+
           Array.from(genusSpecies[gen]).sort().forEach(sp => {
-            const sli = document.createElement('li');
+            const sli = document.createElement('div');
             sli.textContent = `${sp} (${speciesCount[sp]})`;
             sli.className = 'species-item';
+            sli.style.marginLeft = '15px';
             sli.onclick = () => focusSp(sp);
-            ul.appendChild(sli);
+            genBlock.appendChild(sli);
           });
         });
       });
     }
 
-    // Busca e limpeza
-    function clearSearch() {
-      document.getElementById('searchBox').value = '';
-      markers.clearLayers();
-      Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
-      map.setView([-22.5, -53.5], 7);
-    }
     document.getElementById('searchBox').addEventListener('input', e => {
       const v = e.target.value.trim();
       if (v && speciesMarkers[v]) focusSp(v);
