@@ -86,9 +86,6 @@
       color: blue;
       font-style: italic;
     }
-    .hidden {
-      display: none;
-    }
     .search-container {
       display: flex;
       gap: 5px;
@@ -112,23 +109,23 @@
       height: 100%;
     }
     .filter-header {
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
-    color: #333;
-  }
-  .filter-options {
-    margin-left: 15px;
-    margin-top: 5px;
-  }
-  .filter-checkbox {
-    display: block;
-    margin-bottom: 5px;
-  }
-  .hidden {
-    display: none;
-  }
-</style>
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      color: #333;
+    }
+    .filter-options {
+      margin-left: 15px;
+      margin-top: 5px;
+    }
+    .filter-checkbox {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div id="header" style="font-size: 28px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -164,14 +161,13 @@
     <div class="box" id="info">
       <div class="box-title">Informações relevantes</div>
       <ul>
-        <li>A organização da lista de espécies está na ordem: Família (em preto), Gênero (em vermelho) e Espécie (em azul). Ao clicar em qualquer um dos níveis, o mapa vai dar um zoom na região das coletas e também a lista é responsiva aos cliques, se expandindo ou encolhendo.</li>
-        <li>Ao clicar em cima de um localizador de coleta, ele deve mostrar informações, como, Espécie, Gênero, Família, Ano da coleta, Município, etc.</li>
-        <li>As coordenadas são aproximadas e existe um grupo considerável de coletas que não tem coordenadas; por isso, estão nas coordenadas (0, 0), estamos corrigindo isso com o tempo.</li>
-        <li>Temos coletas de diversos anos e a mudança na padronização das informações de cada coleta é normal, por isso algumas coletas mais antigas podem não ter todas as informações.</li>
-        <li>Esse site é criado a partir do banco de dados do HNUP e de bancos de dados públicos, colaborativos e de livre acesso.</li>
-        <li>Esse site é um projeto do Laboratório de Vegetação Ripária - Núpelia - UEM, Link para mais informações sobre o lab: <a href="https://cpr.uem.br/index.php/catalogos/2415-laboratorio-de-vegetacao-riparia" target="_blank">https://cpr.uem.br/index.php/catalogos/2415-laboratorio-de-vegetacao-riparia</a></li>
-        <li>O site está em constante atualização, então sempre dê um "CTRL+F5".</li>
-        <li>Qualquer dúvida, questionamento ou sugestão, contacte: <a href="mailto:vitorbarelli@gmail.com">vitorbarelli@gmail.com</a>.</li>
+        <li>A organização da lista de espécies está na ordem: Família (em preto), Gênero (em vermelho) e Espécie (em azul).</li>
+        <li>Ao clicar em qualquer um dos níveis, o mapa vai dar um zoom na região das coletas.</li>
+        <li>Ao clicar em cima de um localizador de coleta, ele mostra as informações detalhadas da amostra.</li>
+        <li>Coletas com coordenadas ausentes são exibidas em (0,0) — estamos corrigindo isso.</li>
+        <li>Este site é um projeto do Laboratório de Vegetação Ripária - Núpelia - UEM.</li>
+        <li>Link: <a href="https://cpr.uem.br/index.php/catalogos/2415-laboratorio-de-vegetacao-riparia" target="_blank">Site do laboratório</a></li>
+        <li>Contato: <a href="mailto:vitorbarelli@gmail.com">vitorbarelli@gmail.com</a></li>
       </ul>
     </div>
 
@@ -187,201 +183,200 @@
 
   <div style="position:fixed; bottom:10px; right:10px; font-size:12px; background:#F2F7F1; padding:5px; border-radius:8px;">
     Criado por Vitor Eduardo Girotto Barelli<br>
-    Leaflet | Leaflet | Ⓒ OpenStreetMap contributors
+    Leaflet | Ⓒ OpenStreetMap contributors
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js">
-  function toggleFilter(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('hidden');
-}
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script>
+    function toggleFilter(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('hidden');
+    }
 
-// Declarações globais
-const map = L.map('map').setView([-22.5, -53.5], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 18,
-  attribution: 'Leaflet | © OpenStreetMap contributors'
-}).addTo(map);
+    const map = L.map('map').setView([-22.5, -53.5], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: 'Leaflet | © OpenStreetMap contributors'
+    }).addTo(map);
 
-const markers = L.markerClusterGroup();
-const familySpecies = {};
-const genusSpecies = {};
-const speciesMarkers = {};
-const speciesCount = {};
-const genusCount = {};
-const familyCount = {};
+    const markers = L.markerClusterGroup();
+    const familySpecies = {};
+    const genusSpecies = {};
+    const speciesMarkers = {};
+    const speciesCount = {};
+    const genusCount = {};
+    const familyCount = {};
 
-fetch('dados1.json')
-  .then(res => res.json())
-  .then(data => {
-    const anos = new Set();
-    const municipios = new Set();
+    fetch('dados1.json')
+      .then(res => res.json())
+      .then(data => {
+        const anos = new Set();
+        const municipios = new Set();
 
-    data.forEach(d => {
-      const sp = d.nome || '';
-      if (!sp) return;
-      const gen = d.genero || 'Desconhecido';
-      const fam = d.familia || 'Desconhecida';
+        data.forEach(d => {
+          const sp = d.nome || '';
+          if (!sp) return;
+          const gen = d.genero || 'Desconhecido';
+          const fam = d.familia || 'Desconhecida';
 
-      speciesCount[sp] = (speciesCount[sp] || 0) + 1;
-      if (!familySpecies[fam]) familySpecies[fam] = new Set();
-      familySpecies[fam].add(gen);
-      if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
-      genusSpecies[gen].add(sp);
+          speciesCount[sp] = (speciesCount[sp] || 0) + 1;
+          if (!familySpecies[fam]) familySpecies[fam] = new Set();
+          familySpecies[fam].add(gen);
+          if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
+          genusSpecies[gen].add(sp);
 
-      // Filtros
-      if (d.ano_coleta !== undefined) anos.add(d.ano_coleta);
-      if (d.municipio) municipios.add(d.municipio);
+          if (d.ano_coleta !== undefined) anos.add(d.ano_coleta);
+          if (d.municipio) municipios.add(d.municipio);
 
-      const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
-                    `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
-                    `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
-                    `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
-                    `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
-                    `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
-                    `<b>Notas:</b> ${d.notas || '—'}`;
+          const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
+                        `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
+                        `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
+                        `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
+                        `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
+                        `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
+                        `<b>Notas:</b> ${d.notas || '—'}`;
 
-      const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
-      markers.addLayer(m);
-      if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
-      speciesMarkers[sp].push(m);
-    });
+          const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
+          markers.addLayer(m);
+          if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
+          speciesMarkers[sp].push(m);
+        });
 
-    map.addLayer(markers);
+        map.addLayer(markers);
+        populateFilters(anos, municipios);
+        populateList();
 
-    populateFilters(anos, municipios);
-    populateList();
-
-    // Após carregar tudo, ativar busca
-    document.getElementById('searchBox').addEventListener('input', e => {
-      const v = e.target.value.trim();
-      if (v && speciesMarkers[v]) focusSp(v);
-    });
-  });
-
-function populateFilters(anos, municipios) {
-  const yearFilter = document.getElementById('yearFilter');
-  [...anos].sort((a, b) => a - b).forEach(ano => {
-    const label = document.createElement('label');
-    label.className = 'filter-checkbox';
-    label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
-    yearFilter.appendChild(label);
-  });
-
-  const municipioFilter = document.getElementById('municipioFilter');
-  [...municipios].sort().forEach(m => {
-    const label = document.createElement('label');
-    label.className = 'filter-checkbox';
-    label.innerHTML = `<input type="checkbox" name="municipio" value="${m}" onchange="applyFilters()"> ${m}`;
-    municipioFilter.appendChild(label);
-  });
-}
-
-function applyFilters() {
-  const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value);
-  const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
-
-  markers.clearLayers();
-  const arr = [];
-
-  Object.keys(speciesMarkers).forEach(sp => {
-    speciesMarkers[sp].forEach(m => {
-      const popup = m.getPopup().getContent();
-      const matchYear = years.length === 0 || years.some(y => popup.includes(y));
-      const matchMunicipio = municipios.length === 0 || municipios.some(m => popup.includes(m));
-      if (matchYear && matchMunicipio) {
-        markers.addLayer(m);
-        arr.push(m);
-      }
-    });
-  });
-
-  if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-}
-
-function populateList() {
-  const ul = document.getElementById('speciesList');
-  ul.innerHTML = '';
-  Object.keys(familySpecies).sort().forEach(fam => {
-    const fli = document.createElement('div');
-    fli.textContent = `${fam} (${familyCount[fam] || 0})`;
-    fli.className = 'family-header';
-    const famBlock = document.createElement('div');
-
-    fli.onclick = () => {
-      famBlock.classList.toggle('hidden');
-      focusFam(fam);
-    };
-    ul.appendChild(fli);
-    ul.appendChild(famBlock);
-
-    Array.from(familySpecies[fam]).sort().forEach(gen => {
-      const gli = document.createElement('div');
-      gli.textContent = `${gen} (${genusCount[gen] || 0})`;
-      gli.className = 'genus-header';
-      const genBlock = document.createElement('div');
-      genBlock.style.marginLeft = '15px';
-
-      gli.onclick = () => {
-        genBlock.classList.toggle('hidden');
-        focusGen(gen);
-      };
-      famBlock.appendChild(gli);
-      famBlock.appendChild(genBlock);
-
-      Array.from(genusSpecies[gen]).sort().forEach(sp => {
-        const sli = document.createElement('div');
-        sli.textContent = `${sp} (${speciesCount[sp] || 0})`;
-        sli.className = 'species-item';
-        sli.style.marginLeft = '15px';
-        sli.onclick = () => focusSp(sp);
-        genBlock.appendChild(sli);
+        document.getElementById('searchBox').addEventListener('input', e => {
+          const v = e.target.value.trim();
+          if (v && speciesMarkers[v]) focusSp(v);
+        });
       });
-    });
-  });
-}
 
-function focusSp(sp) {
-  markers.clearLayers();
-  const arr = (speciesMarkers[sp] || []).map(m => {
-    markers.addLayer(m);
-    return m;
-  });
-  if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-}
-
-function focusGen(gen) {
-  markers.clearLayers();
-  const arr = [];
-  Array.from(genusSpecies[gen] || []).forEach(sp => {
-    (speciesMarkers[sp] || []).forEach(m => {
-      markers.addLayer(m);
-      arr.push(m);
-    });
-  });
-  if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-}
-
-function focusFam(fam) {
-  markers.clearLayers();
-  const arr = [];
-  Array.from(familySpecies[fam] || []).forEach(gen => {
-    Array.from(genusSpecies[gen] || []).forEach(sp => {
-      (speciesMarkers[sp] || []).forEach(m => {
-        markers.addLayer(m);
-        arr.push(m);
+    function populateFilters(anos, municipios) {
+      const yearFilter = document.getElementById('yearFilter');
+      [...anos].sort((a, b) => a - b).forEach(ano => {
+        const label = document.createElement('label');
+        label.className = 'filter-checkbox';
+        label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
+        yearFilter.appendChild(label);
       });
-    });
-  });
-  if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-}
 
-function clearSearch() {
-  document.getElementById('searchBox').value = '';
-  markers.clearLayers();
-  Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
-  map.setView([-22.5, -53.5], 2);
-}
-</script>
+      const municipioFilter = document.getElementById('municipioFilter');
+      [...municipios].sort().forEach(m => {
+        const label = document.createElement('label');
+        label.className = 'filter-checkbox';
+        label.innerHTML = `<input type="checkbox" name="municipio" value="${m}" onchange="applyFilters()"> ${m}`;
+        municipioFilter.appendChild(label);
+      });
+    }
+
+    function applyFilters() {
+      const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value);
+      const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
+
+      markers.clearLayers();
+      const arr = [];
+
+      Object.keys(speciesMarkers).forEach(sp => {
+        speciesMarkers[sp].forEach(m => {
+          const popup = m.getPopup().getContent();
+          const matchYear = years.length === 0 || years.some(y => popup.includes(y));
+          const matchMunicipio = municipios.length === 0 || municipios.some(m => popup.includes(m));
+          if (matchYear && matchMunicipio) {
+            markers.addLayer(m);
+            arr.push(m);
+          }
+        });
+      });
+
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+
+    function populateList() {
+      const ul = document.getElementById('speciesList');
+      ul.innerHTML = '';
+      Object.keys(familySpecies).sort().forEach(fam => {
+        const fli = document.createElement('div');
+        fli.textContent = `${fam} (${familyCount[fam] || 0})`;
+        fli.className = 'family-header';
+        const famBlock = document.createElement('div');
+
+        fli.onclick = () => {
+          famBlock.classList.toggle('hidden');
+          focusFam(fam);
+        };
+        ul.appendChild(fli);
+        ul.appendChild(famBlock);
+
+        Array.from(familySpecies[fam]).sort().forEach(gen => {
+          const gli = document.createElement('div');
+          gli.textContent = `${gen} (${genusCount[gen] || 0})`;
+          gli.className = 'genus-header';
+          const genBlock = document.createElement('div');
+          genBlock.style.marginLeft = '15px';
+
+          gli.onclick = () => {
+            genBlock.classList.toggle('hidden');
+            focusGen(gen);
+          };
+          famBlock.appendChild(gli);
+          famBlock.appendChild(genBlock);
+
+          Array.from(genusSpecies[gen]).sort().forEach(sp => {
+            const sli = document.createElement('div');
+            sli.textContent = `${sp} (${speciesCount[sp] || 0})`;
+            sli.className = 'species-item';
+            sli.style.marginLeft = '15px';
+            sli.onclick = () => focusSp(sp);
+            genBlock.appendChild(sli);
+          });
+        });
+      });
+    }
+
+    function focusSp(sp) {
+      markers.clearLayers();
+      const arr = (speciesMarkers[sp] || []).map(m => {
+        markers.addLayer(m);
+        return m;
+      });
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+
+    function focusGen(gen) {
+      markers.clearLayers();
+      const arr = [];
+      Array.from(genusSpecies[gen] || []).forEach(sp => {
+        (speciesMarkers[sp] || []).forEach(m => {
+          markers.addLayer(m);
+          arr.push(m);
+        });
+      });
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+
+    function focusFam(fam) {
+      markers.clearLayers();
+      const arr = [];
+      Array.from(familySpecies[fam] || []).forEach(gen => {
+        Array.from(genusSpecies[gen] || []).forEach(sp => {
+          (speciesMarkers[sp] || []).forEach(m => {
+            markers.addLayer(m);
+            arr.push(m);
+          });
+        });
+      });
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+
+    function clearSearch() {
+      document.getElementById('searchBox').value = '';
+      markers.clearLayers();
+      Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
+      map.setView([-22.5, -53.5], 2);
+    }
+  </script>
 </body>
 </html>
