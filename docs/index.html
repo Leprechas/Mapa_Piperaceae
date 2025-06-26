@@ -190,10 +190,13 @@
     Leaflet | Leaflet | Ⓒ OpenStreetMap contributors
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js">function toggleFilter(id) {
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+function toggleFilter(id) {
   const el = document.getElementById(id);
   el.classList.toggle('hidden');
 }
+</script>
 
 fetch('dados1.json')
   .then(res => res.json())
