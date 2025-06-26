@@ -245,6 +245,19 @@
         });
 
         map.addLayer(markers);
+        // Recalcular contagens após speciesCount estar completo
+        Object.keys(genusSpecies).forEach(gen => {
+          genusCount[gen] = 0;
+          genusSpecies[gen].forEach(sp => {
+            genusCount[gen] += speciesCount[sp] || 0;
+          });
+        });
+        Object.keys(familySpecies).forEach(fam => {
+          familyCount[fam] = 0;
+          familySpecies[fam].forEach(gen => {
+            familyCount[fam] += genusCount[gen] || 0;
+          });
+        });
         populateFilters(anos, municipios);
         populateList();
 
