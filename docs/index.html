@@ -125,6 +125,18 @@
       color: blue;
       font-style: italic;
     }
+    .family-header {
+      color: black;
+      font-weight: bold;
+    }
+    .genus-header {
+      color: red;
+      font-style: italic;
+    }
+    .species-item {
+      color: blue;
+      font-style: italic;
+      }
   </style>
 </head>
 <body>
@@ -194,228 +206,227 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-       // --- Funções auxiliares ---
-      function toggleFilter(id) {
-        const el = document.getElementById(id);
-        el.classList.toggle('hidden');
-      }
-      
-      const map = L.map('map').setView([-22.5, -53.5], 2);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: 'Leaflet | © OpenStreetMap contributors'
-      }).addTo(map);
-      
-      const markers = L.markerClusterGroup();
-      const familySpecies = {};
-      const genusSpecies = {};
-      const speciesMarkers = {};
-      const speciesCount = {};
-      const genusCount = {};
-      const familyCount = {};
-      
-      fetch('dados1.json')
-        .then(res => res.json())
-        .then(data => {
-          const anos = new Set();
-          const municipios = new Set();
-      
-          data.forEach(d => {
-            const sp = d.nome || '';
-            if (!sp) return;
-            const gen = d.genero || 'Desconhecido';
-            const fam = d.familia || 'Desconhecida';
-      
-            speciesCount[sp] = (speciesCount[sp] || 0) + 1;
-            if (!familySpecies[fam]) familySpecies[fam] = new Set();
-            familySpecies[fam].add(gen);
-            if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
-            genusSpecies[gen].add(sp);
-      
-            if (d.ano_coleta !== undefined) anos.add(d.ano_coleta);
-            if (d.municipio) municipios.add(d.municipio);
-      
-            const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
-                          `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
-                          `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
-                          `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
-                          `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
-                          `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
-                          `<b>Notas:</b> ${d.notas || '—'}`;
-      
-            const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
+    // --- Funções auxiliares ---
+    function toggleFilter(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('hidden');
+    }
+    
+    const map = L.map('map').setView([-22.5, -53.5], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: 'Leaflet | © OpenStreetMap contributors'
+    }).addTo(map);
+    
+    const markers = L.markerClusterGroup();
+    const familySpecies = {};
+    const genusSpecies = {};
+    const speciesMarkers = {};
+    const speciesCount = {};
+    const genusCount = {};
+    const familyCount = {};
+    
+    fetch('dados1.json')
+      .then(res => res.json())
+      .then(data => {
+        const anos = new Set();
+        const municipios = new Set();
+    
+        data.forEach(d => {
+          const sp = d.nome || '';
+          if (!sp) return;
+          const gen = d.genero || 'Desconhecido';
+          const fam = d.familia || 'Desconhecida';
+    
+          speciesCount[sp] = (speciesCount[sp] || 0) + 1;
+          if (!familySpecies[fam]) familySpecies[fam] = new Set();
+          familySpecies[fam].add(gen);
+          if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
+          genusSpecies[gen].add(sp);
+    
+          if (d.ano_coleta !== undefined) anos.add(d.ano_coleta);
+          if (d.municipio) municipios.add(d.municipio);
+    
+          const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
+                        `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
+                        `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
+                        `<b>Coletas:</b> ${d.numero_coletas || 'Não informado'}<br>` +
+                        `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
+                        `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
+                        `<b>Notas:</b> ${d.notas || '—'}`;
+    
+          const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
+          markers.addLayer(m);
+          if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
+          speciesMarkers[sp].push(m);
+        });
+    
+        map.addLayer(markers);
+        Object.keys(genusSpecies).forEach(gen => {
+          genusCount[gen] = 0;
+          genusSpecies[gen].forEach(sp => {
+            genusCount[gen] += speciesCount[sp] || 0;
+          });
+        });
+        Object.keys(familySpecies).forEach(fam => {
+          familyCount[fam] = 0;
+          familySpecies[fam].forEach(gen => {
+            familyCount[fam] += genusCount[gen] || 0;
+          });
+        });
+        populateFilters(anos, municipios);
+        populateList();
+      });
+    
+    function populateFilters(anos, municipios) {
+      const yearFilter = document.getElementById('yearFilter');
+      [...anos].sort((a, b) => a - b).forEach(ano => {
+        if (ano === 0 || ano === '0') return;
+        const label = document.createElement('label');
+        label.className = 'filter-checkbox';
+        label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
+        yearFilter.appendChild(label);
+      });
+    
+      const municipioFilter = document.getElementById('municipioFilter');
+      [...municipios].sort().forEach(m => {
+        const label = document.createElement('label');
+        label.className = 'filter-checkbox';
+        label.innerHTML = `<input type="checkbox" name="municipio" value="${m}" onchange="applyFilters()"> ${m}`;
+        municipioFilter.appendChild(label);
+      });
+    }
+    
+    function applyFilters() {
+      const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value);
+      const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
+    
+      markers.clearLayers();
+      const arr = [];
+    
+      Object.keys(speciesMarkers).forEach(sp => {
+        speciesMarkers[sp].forEach(m => {
+          const popup = m.getPopup().getContent();
+          const matchYear = years.length === 0 || years.some(y => popup.includes(y));
+          const matchMunicipio = municipios.length === 0 || municipios.some(m => popup.includes(m));
+          if (matchYear && matchMunicipio) {
             markers.addLayer(m);
-            if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
-            speciesMarkers[sp].push(m);
-          });
-      
-          map.addLayer(markers);
-          Object.keys(genusSpecies).forEach(gen => {
-            genusCount[gen] = 0;
-            genusSpecies[gen].forEach(sp => {
-              genusCount[gen] += speciesCount[sp] || 0;
-            });
-          });
-          Object.keys(familySpecies).forEach(fam => {
-            familyCount[fam] = 0;
-            familySpecies[fam].forEach(gen => {
-              familyCount[fam] += genusCount[gen] || 0;
-            });
-          });
-          populateFilters(anos, municipios);
-          populateList();
-        });
-      
-      function populateFilters(anos, municipios) {
-        const yearFilter = document.getElementById('yearFilter');
-        [...anos].sort((a, b) => a - b).forEach(ano => {
-          if (ano === 0 || ano === '0') return;
-          const label = document.createElement('label');
-          label.className = 'filter-checkbox';
-          label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
-          yearFilter.appendChild(label);
-        });
-      
-        const municipioFilter = document.getElementById('municipioFilter');
-        [...municipios].sort().forEach(m => {
-          const label = document.createElement('label');
-          label.className = 'filter-checkbox';
-          label.innerHTML = `<input type="checkbox" name="municipio" value="${m}" onchange="applyFilters()"> ${m}`;
-          municipioFilter.appendChild(label);
-        });
-      }
-      
-      function applyFilters() {
-        const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value);
-        const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
-      
-        markers.clearLayers();
-        const arr = [];
-      
-        Object.keys(speciesMarkers).forEach(sp => {
-          speciesMarkers[sp].forEach(m => {
-            const popup = m.getPopup().getContent();
-            const matchYear = years.length === 0 || years.some(y => popup.includes(y));
-            const matchMunicipio = municipios.length === 0 || municipios.some(m => popup.includes(m));
-            if (matchYear && matchMunicipio) {
-              markers.addLayer(m);
-              arr.push(m);
-            }
-          });
-        });
-      
-        if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-      }
-      
-      function populateList() {
-        const ul = document.getElementById('speciesList');
-        ul.innerHTML = '';
-        window.selectedFamilies = new Set();
-        window.selectedGenera = new Set();
-        window.selectedSpecies = new Set();
-      
-        const searchBox = document.createElement('input');
-        searchBox.type = 'text';
-        searchBox.id = 'searchBox';
-        searchBox.placeholder = 'Digite uma espécie...';
-        searchBox.className = 'search-box';
-        searchBox.addEventListener('input', searchSpecies);
-        ul.appendChild(searchBox);
-      
-        const buttonBlock = document.createElement('div');
-        buttonBlock.style.margin = '10px 0';
-        buttonBlock.innerHTML = `
-          <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
-          <button onclick="clearTaxonSelection()">Limpar seleção</button>
-        `;
-        ul.appendChild(buttonBlock);
-      
-        Object.keys(familySpecies).sort().forEach(fam => {
-          const fli = document.createElement('div');
-          fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
-          ul.appendChild(fli);
-          const famBlock = document.createElement('div');
-          famBlock.style.marginLeft = '15px';
-          ul.appendChild(famBlock);
-      
-          Array.from(familySpecies[fam]).sort().forEach(gen => {
-            const gli = document.createElement('div');
-            gli.innerHTML = `<label class="genus-header"><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}"> ${gen} (${genusCount[gen] || 0})</label>`;
-            famBlock.appendChild(gli);
-            const genBlock = document.createElement('div');
-            genBlock.style.marginLeft = '15px';
-            famBlock.appendChild(genBlock);
-      
-            Array.from(genusSpecies[gen]).sort().forEach(sp => {
-              const sli = document.createElement('div');
-              sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
-              genBlock.appendChild(sli);
-            });
-          });
-        });
-      }
-      
-      function applyTaxonSelection() {
-        selectedFamilies.clear();
-        selectedGenera.clear();
-        selectedSpecies.clear();
-      
-        document.querySelectorAll('.taxon-checkbox:checked').forEach(el => {
-          const type = el.getAttribute('data-type');
-          const val = el.value;
-          if (type === 'family') selectedFamilies.add(val);
-          else if (type === 'genus') selectedGenera.add(val);
-          else if (type === 'species') selectedSpecies.add(val);
-        });
-      
-        markers.clearLayers();
-        const arr = [];
-      
-        Object.keys(speciesMarkers).forEach(sp => {
-          const matches =
-            selectedSpecies.has(sp) ||
-            Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
-            Array.from(selectedFamilies).some(fam => {
-              return Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp));
-            });
-      
-          if (matches) {
-            speciesMarkers[sp].forEach(m => {
-              markers.addLayer(m);
-              arr.push(m);
-            });
+            arr.push(m);
           }
         });
-      
-        if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-      }
-      
-      function clearTaxonSelection() {
-        document.querySelectorAll('.taxon-checkbox').forEach(el => el.checked = false);
-        selectedFamilies.clear();
-        selectedGenera.clear();
-        selectedSpecies.clear();
-        clearSearch();
-      }
-      
-      function searchSpecies() {
-        const query = document.getElementById('searchBox').value.trim();
-        if (query && speciesMarkers[query]) focusSp(query);
-      }
-      
-      function clearSearch() {
-        document.getElementById('searchBox').value = '';
-        markers.clearLayers();
-        Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
-        map.setView([-22.5, -53.5], 2);
-      }
-      
-      function clearFilters() {
-        document.querySelectorAll('input[name="year"]:checked, input[name="municipio"]:checked')
-          .forEach(input => input.checked = false);
-        applyFilters();
-      }
-
+      });
+    
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+    
+    function populateList() {
+      const ul = document.getElementById('speciesList');
+      ul.innerHTML = '';
+      window.selectedFamilies = new Set();
+      window.selectedGenera = new Set();
+      window.selectedSpecies = new Set();
+    
+      const searchBox = document.createElement('input');
+      searchBox.type = 'text';
+      searchBox.id = 'searchBox';
+      searchBox.placeholder = 'Digite uma espécie...';
+      searchBox.className = 'search-box';
+      searchBox.addEventListener('input', searchSpecies);
+      ul.appendChild(searchBox);
+    
+      const buttonBlock = document.createElement('div');
+      buttonBlock.className = 'taxon-buttons';
+      buttonBlock.innerHTML = `
+        <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
+        <button onclick="clearTaxonSelection()">Limpar seleção</button>
+      `;
+      ul.appendChild(buttonBlock);
+    
+      Object.keys(familySpecies).sort().forEach(fam => {
+        const fli = document.createElement('div');
+        fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
+        ul.appendChild(fli);
+        const famBlock = document.createElement('div');
+        famBlock.style.marginLeft = '15px';
+        ul.appendChild(famBlock);
+    
+        Array.from(familySpecies[fam]).sort().forEach(gen => {
+          const gli = document.createElement('div');
+          gli.innerHTML = `<label class="genus-header"><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}"> ${gen} (${genusCount[gen] || 0})</label>`;
+          famBlock.appendChild(gli);
+          const genBlock = document.createElement('div');
+          genBlock.style.marginLeft = '15px';
+          famBlock.appendChild(genBlock);
+    
+          Array.from(genusSpecies[gen]).sort().forEach(sp => {
+            const sli = document.createElement('div');
+            sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
+            genBlock.appendChild(sli);
+          });
+        });
+      });
+    }
+    
+    function applyTaxonSelection() {
+      selectedFamilies.clear();
+      selectedGenera.clear();
+      selectedSpecies.clear();
+    
+      document.querySelectorAll('.taxon-checkbox:checked').forEach(el => {
+        const type = el.getAttribute('data-type');
+        const val = el.value;
+        if (type === 'family') selectedFamilies.add(val);
+        else if (type === 'genus') selectedGenera.add(val);
+        else if (type === 'species') selectedSpecies.add(val);
+      });
+    
+      markers.clearLayers();
+      const arr = [];
+    
+      Object.keys(speciesMarkers).forEach(sp => {
+        const matches =
+          selectedSpecies.has(sp) ||
+          Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
+          Array.from(selectedFamilies).some(fam => {
+            return Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp));
+          });
+    
+        if (matches) {
+          speciesMarkers[sp].forEach(m => {
+            markers.addLayer(m);
+            arr.push(m);
+          });
+        }
+      });
+    
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+    
+    function clearTaxonSelection() {
+      document.querySelectorAll('.taxon-checkbox').forEach(el => el.checked = false);
+      selectedFamilies.clear();
+      selectedGenera.clear();
+      selectedSpecies.clear();
+      clearSearch();
+    }
+    
+    function searchSpecies() {
+      const query = document.getElementById('searchBox').value.trim();
+      if (query && speciesMarkers[query]) focusSp(query);
+    }
+    
+    function clearSearch() {
+      document.getElementById('searchBox').value = '';
+      markers.clearLayers();
+      Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
+      map.setView([-22.5, -53.5], 2);
+    }
+    
+    function clearFilters() {
+      document.querySelectorAll('input[name="year"]:checked, input[name="municipio"]:checked')
+        .forEach(input => input.checked = false);
+      applyFilters();
+    }
   </script>
 </body>
 </html>
