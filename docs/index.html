@@ -74,18 +74,6 @@
     .leaflet-control-attribution {
       display: none;
     }
-    .family-header {
-      color: black;
-      font-weight: bold;
-    }
-    .genus-header {
-      color: red;
-      font-style: italic;
-    }
-    .species-item {
-      color: blue;
-      font-style: italic;
-    }
     .search-container {
       display: flex;
       gap: 5px;
@@ -125,6 +113,18 @@
     .hidden {
       display: none;
     }
+    label.family {
+      color: black;
+      font-weight: bold;
+    }
+    label.genus {
+      color: red;
+      font-style: italic;
+    }
+    label.species {
+      color: blue;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -144,6 +144,10 @@
           <button onclick="clearSearch()">Limpar</button>
         </div>
         <div id="speciesList"></div>
+        <div style="margin-top: 10px;">
+          <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
+          <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
+        </div>
       </div>
       <div class="box">
         <div class="box-title">Filtros</div>
@@ -152,7 +156,7 @@
           <div id="yearFilter" class="filter-options hidden"></div>
           <div class="filter-header" onclick="toggleFilter('municipioFilter')">Localização</div>
           <div id="municipioFilter" class="filter-options hidden"></div>
-          <button onclick="clearFilters()" style="...">Limpar filtros</button>
+          <button onclick="clearFilters()" style="margin-top: 10px;">Limpar filtros</button>
         </div>
       </div>
     </div>
@@ -187,21 +191,22 @@
     Leaflet | Ⓒ OpenStreetMap contributors
   </div>
 
-  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
+        // JavaScript completo para o site interativo do Herbário HNUP-UEM
+    
     function toggleFilter(id) {
       const el = document.getElementById(id);
       el.classList.toggle('hidden');
     }
-
+    
     const map = L.map('map').setView([-22.5, -53.5], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: 'Leaflet | © OpenStreetMap contributors'
     }).addTo(map);
-
+    
     const markers = L.markerClusterGroup();
     const familySpecies = {};
     const genusSpecies = {};
@@ -209,28 +214,28 @@
     const speciesCount = {};
     const genusCount = {};
     const familyCount = {};
-
+    
     fetch('dados1.json')
       .then(res => res.json())
       .then(data => {
         const anos = new Set();
         const municipios = new Set();
-
+    
         data.forEach(d => {
           const sp = d.nome || '';
           if (!sp) return;
           const gen = d.genero || 'Desconhecido';
           const fam = d.familia || 'Desconhecida';
-
+    
           speciesCount[sp] = (speciesCount[sp] || 0) + 1;
           if (!familySpecies[fam]) familySpecies[fam] = new Set();
           familySpecies[fam].add(gen);
           if (!genusSpecies[gen]) genusSpecies[gen] = new Set();
           genusSpecies[gen].add(sp);
-
+    
           if (d.ano_coleta !== undefined) anos.add(d.ano_coleta);
           if (d.municipio) municipios.add(d.municipio);
-
+    
           const popup = `<b>Espécie:</b> ${sp}<br><b>Gênero:</b> ${gen}<br><b>Família:</b> ${fam}<br><br>` +
                         `<b>Ano de coleta:</b> ${d.ano_coleta || 'Não informado'}<br>` +
                         `<b>Município:</b> ${d.municipio || 'Não informado'}<br>` +
@@ -238,15 +243,15 @@
                         `<b>Habitat:</b> ${d.habitat || 'Não informado'}<br>` +
                         `<b>Descrição:</b> ${d.descricao || '—'}<br>` +
                         `<b>Notas:</b> ${d.notas || '—'}`;
-
+    
           const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
           markers.addLayer(m);
           if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
           speciesMarkers[sp].push(m);
         });
-
+    
         map.addLayer(markers);
-        // Recalcular contagens após speciesCount estar completo
+    
         Object.keys(genusSpecies).forEach(gen => {
           genusCount[gen] = 0;
           genusSpecies[gen].forEach(sp => {
@@ -259,15 +264,16 @@
             familyCount[fam] += genusCount[gen] || 0;
           });
         });
+    
         populateFilters(anos, municipios);
         populateList();
-
+    
         document.getElementById('searchBox').addEventListener('input', e => {
           const v = e.target.value.trim();
           if (v && speciesMarkers[v]) focusSp(v);
         });
       });
-
+    
     function populateFilters(anos, municipios) {
       const yearFilter = document.getElementById('yearFilter');
       [...anos].sort((a, b) => a - b).forEach(ano => {
@@ -277,7 +283,7 @@
         label.innerHTML = `<input type="checkbox" name="year" value="${ano}" onchange="applyFilters()"> ${ano}`;
         yearFilter.appendChild(label);
       });
-
+    
       const municipioFilter = document.getElementById('municipioFilter');
       [...municipios].sort().forEach(m => {
         const label = document.createElement('label');
@@ -286,14 +292,14 @@
         municipioFilter.appendChild(label);
       });
     }
-
+    
     function applyFilters() {
       const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value);
       const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
-
+    
       markers.clearLayers();
       const arr = [];
-
+    
       Object.keys(speciesMarkers).forEach(sp => {
         speciesMarkers[sp].forEach(m => {
           const popup = m.getPopup().getContent();
@@ -305,56 +311,38 @@
           }
         });
       });
-
+    
       if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
     }
-
-    function populateList() {
-      const ul = document.getElementById('speciesList');
-      ul.innerHTML = '';
     
-      // Adiciona variáveis de seleção global
-      window.selectedFamilies = new Set();
-      window.selectedGenera = new Set();
-      window.selectedSpecies = new Set();
-    
-      Object.keys(familySpecies).sort().forEach(fam => {
-        const famId = `fam_${fam}`;
-        const fli = document.createElement('div');
-        fli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}" id="${famId}"> ${fam} (${familyCount[fam] || 0})</label>`;
-        ul.appendChild(fli);
-    
-        const famBlock = document.createElement('div');
-        famBlock.style.marginLeft = '15px';
-        ul.appendChild(famBlock);
-    
-        Array.from(familySpecies[fam]).sort().forEach(gen => {
-          const genId = `gen_${gen}`;
-          const gli = document.createElement('div');
-          gli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}" id="${genId}"> ${gen} (${genusCount[gen] || 0})</label>`;
-          famBlock.appendChild(gli);
-    
-          const genBlock = document.createElement('div');
-          genBlock.style.marginLeft = '15px';
-          famBlock.appendChild(genBlock);
-    
-          Array.from(genusSpecies[gen]).sort().forEach(sp => {
-            const spId = `sp_${sp}`;
-            const sli = document.createElement('div');
-            sli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}" id="${spId}"> ${sp} (${speciesCount[sp] || 0})</label>`;
-            genBlock.appendChild(sli);
-          });
-        });
+    function focusSp(sp) {
+      markers.clearLayers();
+      const arr = (speciesMarkers[sp] || []).map(m => {
+        markers.addLayer(m);
+        return m;
       });
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
     
-      // Adiciona os botões ao final da lista
-      const buttonBlock = document.createElement('div');
-      buttonBlock.style.marginTop = '10px';
-      buttonBlock.innerHTML = `
-        <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
-        <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
-      `;
-      ul.appendChild(buttonBlock);
+    function clearSearch() {
+      document.getElementById('searchBox').value = '';
+      markers.clearLayers();
+      Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
+      map.setView([-22.5, -53.5], 2);
+    }
+    
+    function clearFilters() {
+      document.querySelectorAll('input[name="year"]:checked, input[name="municipio"]:checked')
+        .forEach(input => input.checked = false);
+      applyFilters();
+    }
+    
+    function clearTaxonSelection() {
+      document.querySelectorAll('.taxon-checkbox').forEach(el => el.checked = false);
+      selectedFamilies.clear();
+      selectedGenera.clear();
+      selectedSpecies.clear();
+      clearSearch();
     }
     
     function applyTaxonSelection() {
@@ -392,60 +380,9 @@
       if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
     }
     
-    function clearTaxonSelection() {
-      document.querySelectorAll('.taxon-checkbox').forEach(el => el.checked = false);
-      selectedFamilies.clear();
-      selectedGenera.clear();
-      selectedSpecies.clear();
-      clearSearch(); // Reutiliza função já existente
-    }
-
-    function focusSp(sp) {
-      markers.clearLayers();
-      const arr = (speciesMarkers[sp] || []).map(m => {
-        markers.addLayer(m);
-        return m;
-      });
-      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-    }
-
-    function focusGen(gen) {
-      markers.clearLayers();
-      const arr = [];
-      Array.from(genusSpecies[gen] || []).forEach(sp => {
-        (speciesMarkers[sp] || []).forEach(m => {
-          markers.addLayer(m);
-          arr.push(m);
-        });
-      });
-      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-    }
-
-    function focusFam(fam) {
-      markers.clearLayers();
-      const arr = [];
-      Array.from(familySpecies[fam] || []).forEach(gen => {
-        Array.from(genusSpecies[gen] || []).forEach(sp => {
-          (speciesMarkers[sp] || []).forEach(m => {
-            markers.addLayer(m);
-            arr.push(m);
-          });
-        });
-      });
-      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
-    }
-
-    function clearSearch() {
-      document.getElementById('searchBox').value = '';
-      markers.clearLayers();
-      Object.values(speciesMarkers).flat().forEach(m => markers.addLayer(m));
-      map.setView([-22.5, -53.5], 2);
-    }
-    function clearFilters() {
-      document.querySelectorAll('input[name="year"]:checked, input[name="municipio"]:checked')
-        .forEach(input => input.checked = false);
-      applyFilters();
-    }
+    let selectedFamilies = new Set();
+    let selectedGenera = new Set();
+    let selectedSpecies = new Set();
   </script>
 </body>
 </html>
