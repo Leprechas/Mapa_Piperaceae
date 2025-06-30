@@ -14,7 +14,7 @@
       background-color: #EAF3E1;
     }
     #header {
-      background-color: #BBD3A2;
+      background-color: #6B8E6F;
       padding: 10px;
       text-align: center;
       font-weight: bold;
@@ -23,18 +23,14 @@
       position: relative;
       height: 80px;
     }
-    #logo-left {
+    #logo-left, #logo-right {
       position: absolute;
       top: 0;
-      right: 0;
       height: 100%;
     }
-    #logo-right {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-    }
+    #logo-left { left: 0; }
+    #logo-right { right: 0; }
+
     #container {
       display: grid;
       grid-template-columns: 300px 1fr;
@@ -74,27 +70,26 @@
     .leaflet-control-attribution {
       display: none;
     }
-    .search-container {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 10px;
+    .family-header {
+      color: black;
+      font-weight: bold;
     }
-    .search-container input[type="text"] {
-      flex: 1;
+    .genus-header {
+      color: red;
+      font-style: italic;
+    }
+    .species-item {
+      color: blue;
+      font-style: italic;
+    }
+    .search-box {
+      width: 100%;
+      margin-bottom: 5px;
       padding: 5px;
     }
-    .search-container button {
-      padding: 5px 10px;
-      background-color: #6B8E6F;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #speciesList {
-      overflow-y: auto;
-      flex: 1;
-      height: 100%;
+    .taxon-buttons button {
+      margin-bottom: 5px;
+      width: 100%;
     }
     .filter-header {
       font-weight: bold;
@@ -113,54 +108,23 @@
     .hidden {
       display: none;
     }
-    label.family {
-      color: black;
-      font-weight: bold;
-    }
-    label.genus {
-      color: red;
-      font-style: italic;
-    }
-    label.species {
-      color: blue;
-      font-style: italic;
-    }
-    .family-header {
-      color: black;
-      font-weight: bold;
-    }
-    .genus-header {
-      color: red;
-      font-style: italic;
-    }
-    .species-item {
-      color: blue;
-      font-style: italic;
-      }
   </style>
 </head>
 <body>
-  <div id="header" style="font-size: 28px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-    <img id="logo-right" src="logo_lab.png" alt="Logo NUPELIA">
+  <div id="header">
+    <img id="logo-left" src="logo_uem.jpeg" alt="Logo UEM">
     Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)<br>
     <span style="font-size:20px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
-    <img id="logo-left" src="logo_uem.jpeg" alt="Logo UEM">
+    <img id="logo-right" src="logo_lab.png" alt="Logo NUPELIA">
   </div>
 
   <div id="container">
     <div id="sidebar">
       <div class="box" style="height: 400px; display: flex; flex-direction: column;">
         <div class="box-title">Barra de pesquisa de espécie</div>
-        <div class="search-container">
-          <input type="text" id="searchBox" placeholder="Digite uma espécie...">
-          <button onclick="clearSearch()">Limpar</button>
-        </div>
-        <div id="speciesList"></div>
-        <div style="margin-top: 10px;">
-          <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
-          <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
-        </div>
+        <div id="speciesList" style="overflow-y: auto; flex: 1; height: 100%;"></div>
       </div>
+
       <div class="box">
         <div class="box-title">Filtros</div>
         <div>
@@ -168,7 +132,7 @@
           <div id="yearFilter" class="filter-options hidden"></div>
           <div class="filter-header" onclick="toggleFilter('municipioFilter')">Localização</div>
           <div id="municipioFilter" class="filter-options hidden"></div>
-          <button onclick="clearFilters()" style="margin-top: 10px;">Limpar filtros</button>
+          <button onclick="clearFilters()" style="margin-top: 10px; width: 100%;">Limpar filtros</button>
         </div>
       </div>
     </div>
@@ -205,6 +169,7 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script src="mapa_script.js"></script>
   <script>
     // --- Funções auxiliares ---
     function toggleFilter(id) {
