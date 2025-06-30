@@ -194,7 +194,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-       // --- Funções auxiliares ---
+             // --- Funções auxiliares ---
       function toggleFilter(id) {
         const el = document.getElementById(id);
         el.classList.toggle('hidden');
@@ -264,15 +264,6 @@
           });
           populateFilters(anos, municipios);
           populateList();
-      
-          document.getElementById('searchBox').addEventListener('input', e => {
-            const v = e.target.value.trim().toLowerCase();
-            const allItems = document.querySelectorAll('.species-item, .genus-header, .family-header');
-            allItems.forEach(el => {
-              const label = el.textContent.toLowerCase();
-              el.parentElement.style.display = label.includes(v) ? '' : 'none';
-            });
-          });
         });
       
       function populateFilters(anos, municipios) {
@@ -323,6 +314,14 @@
         window.selectedGenera = new Set();
         window.selectedSpecies = new Set();
       
+        const buttonBlock = document.createElement('div');
+        buttonBlock.style.marginBottom = '10px';
+        buttonBlock.innerHTML = `
+          <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
+          <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
+        `;
+        ul.appendChild(buttonBlock);
+      
         Object.keys(familySpecies).sort().forEach(fam => {
           const fli = document.createElement('div');
           fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
@@ -346,14 +345,6 @@
             });
           });
         });
-      
-        const buttonBlock = document.createElement('div');
-        buttonBlock.style.marginTop = '10px';
-        buttonBlock.innerHTML = `
-          <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
-          <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
-        `;
-        ul.appendChild(buttonBlock);
       }
       
       function applyTaxonSelection() {
