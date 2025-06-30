@@ -194,7 +194,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-            // --- Funções auxiliares ---
+       // --- Funções auxiliares ---
       function toggleFilter(id) {
         const el = document.getElementById(id);
         el.classList.toggle('hidden');
@@ -314,14 +314,21 @@
         window.selectedGenera = new Set();
         window.selectedSpecies = new Set();
       
-        const searchContainer = document.createElement('div');
-        searchContainer.className = 'search-container';
-        searchContainer.innerHTML = `
-          <input type="text" id="searchBox" placeholder="Digite uma espécie..." oninput="searchSpecies()">
-          <button onclick="clearTaxonSelection()">Limpar seleção</button>
+        const searchBox = document.createElement('input');
+        searchBox.type = 'text';
+        searchBox.id = 'searchBox';
+        searchBox.placeholder = 'Digite uma espécie...';
+        searchBox.className = 'search-box';
+        searchBox.addEventListener('input', searchSpecies);
+        ul.appendChild(searchBox);
+      
+        const buttonBlock = document.createElement('div');
+        buttonBlock.style.margin = '10px 0';
+        buttonBlock.innerHTML = `
           <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
+          <button onclick="clearTaxonSelection()">Limpar seleção</button>
         `;
-        ul.appendChild(searchContainer);
+        ul.appendChild(buttonBlock);
       
         Object.keys(familySpecies).sort().forEach(fam => {
           const fli = document.createElement('div');
@@ -408,6 +415,7 @@
           .forEach(input => input.checked = false);
         applyFilters();
       }
+
   </script>
 </body>
 </html>
