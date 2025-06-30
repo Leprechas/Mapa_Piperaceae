@@ -194,7 +194,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-             // --- Funções auxiliares ---
+            // --- Funções auxiliares ---
       function toggleFilter(id) {
         const el = document.getElementById(id);
         el.classList.toggle('hidden');
@@ -314,13 +314,14 @@
         window.selectedGenera = new Set();
         window.selectedSpecies = new Set();
       
-        const buttonBlock = document.createElement('div');
-        buttonBlock.style.marginBottom = '10px';
-        buttonBlock.innerHTML = `
-          <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
-          <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'search-container';
+        searchContainer.innerHTML = `
+          <input type="text" id="searchBox" placeholder="Digite uma espécie..." oninput="searchSpecies()">
+          <button onclick="clearTaxonSelection()">Limpar seleção</button>
+          <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
         `;
-        ul.appendChild(buttonBlock);
+        ul.appendChild(searchContainer);
       
         Object.keys(familySpecies).sort().forEach(fam => {
           const fli = document.createElement('div');
@@ -390,6 +391,11 @@
         clearSearch();
       }
       
+      function searchSpecies() {
+        const query = document.getElementById('searchBox').value.trim();
+        if (query && speciesMarkers[query]) focusSp(query);
+      }
+      
       function clearSearch() {
         document.getElementById('searchBox').value = '';
         markers.clearLayers();
@@ -402,7 +408,6 @@
           .forEach(input => input.checked = false);
         applyFilters();
       }
-
   </script>
 </body>
 </html>
