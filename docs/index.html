@@ -312,43 +312,92 @@
     function populateList() {
       const ul = document.getElementById('speciesList');
       ul.innerHTML = '';
+    
+      // Adiciona variáveis de seleção global
+      window.selectedFamilies = new Set();
+      window.selectedGenera = new Set();
+      window.selectedSpecies = new Set();
+    
       Object.keys(familySpecies).sort().forEach(fam => {
+        const famId = `fam_${fam}`;
         const fli = document.createElement('div');
-        fli.textContent = `${fam} (${familyCount[fam] || 0})`;
-        fli.className = 'family-header';
-        const famBlock = document.createElement('div');
-
-        fli.onclick = () => {
-          famBlock.classList.toggle('hidden');
-          focusFam(fam);
-        };
+        fli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}" id="${famId}"> ${fam} (${familyCount[fam] || 0})</label>`;
         ul.appendChild(fli);
+    
+        const famBlock = document.createElement('div');
+        famBlock.style.marginLeft = '15px';
         ul.appendChild(famBlock);
-
+    
         Array.from(familySpecies[fam]).sort().forEach(gen => {
+          const genId = `gen_${gen}`;
           const gli = document.createElement('div');
-          gli.textContent = `${gen} (${genusCount[gen] || 0})`;
-          gli.className = 'genus-header';
+          gli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}" id="${genId}"> ${gen} (${genusCount[gen] || 0})</label>`;
+          famBlock.appendChild(gli);
+    
           const genBlock = document.createElement('div');
           genBlock.style.marginLeft = '15px';
-
-          gli.onclick = () => {
-            genBlock.classList.toggle('hidden');
-            focusGen(gen);
-          };
-          famBlock.appendChild(gli);
           famBlock.appendChild(genBlock);
-
+    
           Array.from(genusSpecies[gen]).sort().forEach(sp => {
+            const spId = `sp_${sp}`;
             const sli = document.createElement('div');
-            sli.textContent = `${sp} (${speciesCount[sp] || 0})`;
-            sli.className = 'species-item';
-            sli.style.marginLeft = '15px';
-            sli.onclick = () => focusSp(sp);
+            sli.innerHTML = `<label><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}" id="${spId}"> ${sp} (${speciesCount[sp] || 0})</label>`;
             genBlock.appendChild(sli);
           });
         });
       });
+    
+      // Adiciona os botões ao final da lista
+      const buttonBlock = document.createElement('div');
+      buttonBlock.style.marginTop = '10px';
+      buttonBlock.innerHTML = `
+        <button onclick="applyTaxonSelection()" style="margin-right: 10px; padding: 5px 10px;">Aplicar seleção taxonômica</button>
+        <button onclick="clearTaxonSelection()" style="padding: 5px 10px;">Limpar seleção</button>
+      `;
+      ul.appendChild(buttonBlock);
+    }
+    
+    function applyTaxonSelection() {
+      selectedFamilies.clear();
+      selectedGenera.clear();
+      selectedSpecies.clear();
+    
+      document.querySelectorAll('.taxon-checkbox:checked').forEach(el => {
+        const type = el.getAttribute('data-type');
+        const val = el.value;
+        if (type === 'family') selectedFamilies.add(val);
+        else if (type === 'genus') selectedGenera.add(val);
+        else if (type === 'species') selectedSpecies.add(val);
+      });
+    
+      markers.clearLayers();
+      const arr = [];
+    
+      Object.keys(speciesMarkers).forEach(sp => {
+        const matches =
+          selectedSpecies.has(sp) ||
+          Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
+          Array.from(selectedFamilies).some(fam => {
+            return Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp));
+          });
+    
+        if (matches) {
+          speciesMarkers[sp].forEach(m => {
+            markers.addLayer(m);
+            arr.push(m);
+          });
+        }
+      });
+    
+      if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+    }
+    
+    function clearTaxonSelection() {
+      document.querySelectorAll('.taxon-checkbox').forEach(el => el.checked = false);
+      selectedFamilies.clear();
+      selectedGenera.clear();
+      selectedSpecies.clear();
+      clearSearch(); // Reutiliza função já existente
     }
 
     function focusSp(sp) {
