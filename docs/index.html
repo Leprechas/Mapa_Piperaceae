@@ -345,12 +345,6 @@
         const speciesList = document.getElementById('speciesList');
         speciesList.innerHTML = '';
       
-        // Evita duplicação: remove os elementos fixos se já existirem
-        const oldSearch = document.getElementById('searchBox');
-        if (oldSearch) oldSearch.remove();
-        const oldButtons = document.querySelector('.taxon-buttons');
-        if (oldButtons) oldButtons.remove();
-
         // Reaproveita a searchBox já existente no HTML
         const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', searchSpecies);
