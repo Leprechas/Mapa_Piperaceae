@@ -68,13 +68,17 @@
       flex-direction: column;
     }
     
+    #speciesHeader {
+      flex-shrink: 0;
+    }
+    
     #speciesList.scroll-species-list {
       flex: 1;
       overflow-y: auto;
       margin-top: 10px;
     }
-        /* Ajusta altura máxima das caixas laterais e ativa rolagem */
-    #filters, #species {
+        /* Ajusta altura máxima das caixas laterais*/
+    #filters {
       height: 500px;
       overflow-y: auto;
     }
@@ -163,8 +167,18 @@
     <!-- Coluna 2 - Lista de espécies -->
     <div id="species" class="box">
       <div class="box-title">Barra de pesquisa de espécie</div>
-      
-    <div id="speciesList" class="scroll-species-list"></div>
+        <!-- Contêiner fixo (sem rolagem) -->
+      <div id="speciesHeader">
+        <input type="text" id="searchBox" placeholder="Digite uma espécie..." class="search-box">
+        <div class="taxon-buttons">
+          <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
+          <button onclick="clearTaxonSelection()">Limpar seleção</button>
+        </div>
+      </div>
+    
+      <!-- Contêiner com rolagem -->
+      <div id="speciesList" class="scroll-species-list"></div>
+    </div>
  
     <!-- Coluna 3 - Mapa -->
     <div class="box" id="map" style="height: 500px;"></div>
