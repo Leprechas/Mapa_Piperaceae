@@ -493,7 +493,7 @@
     
     function searchSpecies() {
       const query = document.getElementById('searchBox').value.trim().toLowerCase();
-      const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase() === query);
+      const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase().includes(query));
     
       console.log("Query:", query);
       console.log("Match encontrado:", match);
@@ -505,20 +505,20 @@
       window.selectedGenera.clear();
       window.selectedSpecies.clear();
     
-      // Marca a espécie encontrada
+      // Adiciona a espécie encontrada à seleção
       window.selectedSpecies.add(match);
-      updateSpeciesChart(match);
     
-      // Atualiza checkboxes da lista (opcional)
-      document.querySelectorAll('.taxon-checkbox').forEach(el => {
-        if (el.dataset.type === 'species') {
-          el.checked = (el.value === match);
+      // Marca a checkbox correspondente, se existir
+      const checkboxes = document.querySelectorAll('.species-checkbox');
+      checkboxes.forEach(cb => {
+        if (cb.dataset.name.toLowerCase() === match.toLowerCase()) {
+          cb.checked = true;
         } else {
-          el.checked = false;
+          cb.checked = false;
         }
       });
     
-      // Aplica seleção taxonômica e respeita os filtros ambientais
+      // Atualiza o mapa e o gráfico com os novos filtros
       applyTaxonSelection();
     }
     
