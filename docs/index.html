@@ -193,7 +193,8 @@
         <li>Para utilizar a caixa de busca "Digite uma espécie..." deve ser escrito o epíteto específico, ou seja, o segundo nome da espécie, e deve estar escrito corretamente como informado na lista.</li>
         <li>Ao marcar uma caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode selecionar mais de uma caixinha de cada um dos níveis por vez.</li>
         <li>Ao clicar em cima de um localizador de coleta, ele mostra as informações detalhadas da amostra.</li>
-        <li>Para utilizar os "Filtros" selecione o filtro e marque a caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar com os "Filtros" escolhidos, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa.</li>
+        <li>Para utilizar os "Filtros" selecione o filtro e marque a caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar com os "Filtros" escolhidos, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode utilizar apenas os "Filtros" sem selecionar as caixinhas dos níveis, ai o mapa mostrará todas as coletas daquele ano ou daquele município</li>
+        <li>Para vizualizar os "Filtros" só clicar neles, clicando novamente tu vai recolher eles.</li>
         <li>Coletas com coordenadas ausentes são exibidas em (0,0) — estamos corrigindo isso.</li>
         <li>Este site é um projeto do Laboratório de Vegetação Ripária - Núpelia - UEM.</li>
         <li>Link: <a href="https://cpr.uem.br/index.php/catalogos/2415-laboratorio-de-vegetacao-riparia" target="_blank">Site do laboratório</a></li>
@@ -349,15 +350,17 @@
         if (oldSearch) oldSearch.remove();
         const oldButtons = document.querySelector('.taxon-buttons');
         if (oldButtons) oldButtons.remove();
-      
-        // Campo de busca (fixo)
-        const searchBox = document.createElement('input');
-        searchBox.type = 'text';
-        searchBox.id = 'searchBox';
-        searchBox.placeholder = 'Digite uma espécie...';
-        searchBox.className = 'search-box';
+
+        // Reaproveita a searchBox já existente no HTML
+        const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', searchSpecies);
-        speciesContainer.insertBefore(searchBox, speciesList);
+
+        // ✅ Adicione este trecho aqui para funcionar com Enter:
+        searchBox.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            searchSpecies();
+          }
+        });
       
         // Botões (fixos)
         const buttonBlock = document.createElement('div');
@@ -459,7 +462,7 @@
     
     function searchSpecies() {
         const query = document.getElementById('searchBox').value.trim().toLowerCase();
-        const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase() === query);
+        const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase().includes(query));
         if (!match) return;
       
         // Simula que a espécie foi marcada
