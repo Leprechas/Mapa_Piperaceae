@@ -341,38 +341,24 @@
         window.selectedFamilies = new Set();
         window.selectedGenera = new Set();
         window.selectedSpecies = new Set();
-        const speciesContainer = document.getElementById('species');
-        const speciesList = document.getElementById('speciesList');
-        speciesList.innerHTML = '';
       
-        // Reaproveita a searchBox já existente no HTML
         const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', searchSpecies);
-
-        // ✅ Adicione este trecho aqui para funcionar com Enter:
+      
         searchBox.addEventListener('keypress', function(e) {
           if (e.key === 'Enter') {
             searchSpecies();
           }
         });
       
-        // Botões (fixos)
-        const buttonBlock = document.createElement('div');
-        buttonBlock.className = 'taxon-buttons';
-        buttonBlock.innerHTML = `
-          <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
-          <button onclick="clearTaxonSelection()">Limpar seleção</button>
-        `;
-        speciesContainer.insertBefore(buttonBlock, speciesList);
-      
         // Preenchimento da lista taxonômica
         Object.keys(familySpecies).sort().forEach(fam => {
           const fli = document.createElement('div');
           fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
-          speciesList.appendChild(fli);
+          ul.appendChild(fli);
           const famBlock = document.createElement('div');
           famBlock.style.marginLeft = '15px';
-          speciesList.appendChild(famBlock);
+          ul.appendChild(famBlock);
       
           Array.from(familySpecies[fam]).sort().forEach(gen => {
             const gli = document.createElement('div');
@@ -389,16 +375,17 @@
             });
           });
         });
-        // ✅ Preenche datalist com sugestões para autocomplete (adicione aqui)
+      
+        // Preencher autocomplete
         const datalist = document.getElementById('speciesSuggestions');
         if (datalist) {
-        datalist.innerHTML = '';
-        Object.keys(speciesMarkers).sort().forEach(sp => {
-          const option = document.createElement('option');
-          option.value = sp;
-          datalist.appendChild(option);
-        });
-      }
+          datalist.innerHTML = '';
+          Object.keys(speciesMarkers).sort().forEach(sp => {
+            const option = document.createElement('option');
+            option.value = sp;
+            datalist.appendChild(option);
+          });
+        }
     }
     function applyTaxonSelection() {
         selectedFamilies.clear();
