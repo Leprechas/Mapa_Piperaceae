@@ -453,7 +453,8 @@
         // Simula que a espécie foi marcada
         window.selectedFamilies.clear();
         window.selectedGenera.clear();
-        window.selectedSpecies = new Set([match]);
+        window.selectedSpecies.clear();
+        window.selectedSpecies.add(match);
       
         applyTaxonSelection();  // Respeita os filtros ambientais
       }
