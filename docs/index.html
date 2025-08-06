@@ -1,59 +1,53 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
   <title>Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
     body {
       margin: 0;
+      padding: 0;
       font-family: sans-serif;
       background-color: #EAF3E1;
     }
     #header {
       background-color: #6B8E6F;
-      text-align: center;
       padding: 10px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       position: relative;
+      height: 80px;
     }
-    #header img {
+    #logo-left, #logo-right {
       position: absolute;
-      top: 5px;
-      height: 70px;
+      top: 0;
+      height: 100%;
     }
-    #logo-left { left: 10px; }
-    #logo-right { right: 10px; }
-    #main {
+    #logo-left { left: 0; }
+    #logo-right { right: 0; }
+
+    #container {
       display: grid;
-      grid-template-columns: 200px 200px 1fr;
-      grid-template-rows: 450px 300px;
+      grid-template-columns: 300px 1fr;
+      grid-template-rows: auto 1fr auto auto;
       gap: 10px;
       padding: 10px;
     }
-    #sidebar, #searchbar, #map, #info, #chart, #species-info, #footer, #links {
+    #sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .box {
       background-color: #F2F7F1;
       border-radius: 10px;
       padding: 10px;
       box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    #sidebar ul {
-      padding-left: 20px;
-    }
-    #map {
-      grid-column: 3;
-      grid-row: 1;
-      background-color: #6B8E6F;
-    }
-    #species-info {
-      grid-column: 1 / 2;
-    }
-    #chart {
-      grid-column: 2 / 4;
-    }
-    #footer {
-      grid-column: 1 / 4;
-      margin-top: 20px;
     }
     .box-title {
       background-color: #6B8E6F;
@@ -61,6 +55,41 @@
       padding: 5px 10px;
       border-radius: 10px 10px 0 0;
       font-weight: bold;
+    }
+    #map {
+      background-color: #6B8E6F;
+      border-radius: 10px;
+      height: 500px;
+    }
+    #info, #links {
+      grid-column: 1 / -1;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    .leaflet-control-attribution {
+      display: none;
+    }
+    .family-header {
+      color: black;
+      font-weight: bold;
+    }
+    .genus-header {
+      color: red;
+      font-style: italic;
+    }
+    .species-item {
+      color: blue;
+      font-style: italic;
+    }
+    .search-box {
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 5px;
+    }
+    .taxon-buttons button {
+      margin-bottom: 5px;
+      width: 100%;
     }
     .filter-header {
       font-weight: bold;
@@ -72,6 +101,10 @@
       margin-left: 15px;
       margin-top: 5px;
     }
+    .filter-checkbox {
+      display: block;
+      margin-bottom: 5px;
+    }
     .hidden {
       display: none;
     }
@@ -80,47 +113,33 @@
 <body>
   <div id="header">
     <img id="logo-left" src="logo_uem.jpeg" alt="Logo UEM">
-    <div>
-      <strong>Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)</strong><br>
-      <span>Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
-    </div>
+    Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)<br>
+    <span style="font-size:20px; font-weight:normal;">Laboratório de Vegetação Ripária - NUPELIA - UEM</span>
     <img id="logo-right" src="logo_lab.png" alt="Logo NUPELIA">
   </div>
 
-  <div id="main">
+  <div id="container">
     <div id="sidebar">
-      <div class="box-title">Filtros</div>
-      <div>
-        <div class="filter-header" onclick="toggleFilter('yearFilter')">Ano de coleta</div>
-        <div id="yearFilter" class="filter-options hidden"></div>
-        <div class="filter-header" onclick="toggleFilter('municipioFilter')">Localização</div>
-        <div id="municipioFilter" class="filter-options hidden"></div>
-        <button onclick="clearFilters()" style="margin-top: 10px; width: 100%;">Limpar filtros</button>
+      <div class="box" style="height: 400px; display: flex; flex-direction: column;">
+        <div class="box-title">Barra de pesquisa de espécie</div>
+        <div id="speciesList" style="overflow-y: auto; flex: 1; height: 100%;"></div>
+      </div>
+
+      <div class="box">
+        <div class="box-title">Filtros</div>
+        <div>
+          <div class="filter-header" onclick="toggleFilter('yearFilter')">Ano de coleta</div>
+          <div id="yearFilter" class="filter-options hidden"></div>
+          <div class="filter-header" onclick="toggleFilter('municipioFilter')">Localização</div>
+          <div id="municipioFilter" class="filter-options hidden"></div>
+          <button onclick="clearFilters()" style="margin-top: 10px; width: 100%;">Limpar filtros</button>
+        </div>
       </div>
     </div>
 
-    <div id="searchbar">
-      <div class="box-title">Barra de pesquisa de espécie</div>
-      <p>A lista de espécies</p>
-    </div>
+    <div class="box" id="map"></div>
 
-    <div id="map">
-      <p style="text-align: center; color: white; padding-top: 200px;">Colocar o MAPA MUNDI INTERATIVO VAI FICAR NESSE ESPAÇO</p>
-    </div>
-
-    <div id="species-info">
-      <div class="box-title">Mais informações sobre a espécie selecionada</div>
-      <p>Puxar informações da espécie do "specieslink" e apresentar o link</p>
-    </div>
-
-    <div id="chart">
-      <div class="box-title">Gráfico de coletas</div>
-      <p style="text-align: center;">Gráfico de coletas<br>Eixo X = Anos<br>Eixo Y = Número de coletas</p>
-    </div>
-  </div>
-
-  <div id="footer">
-    <div id="info" class="box">
+    <div class="box" id="info">
       <div class="box-title">Informações relevantes</div>
       <ul>
         <li>A organização da lista de espécies está na ordem: Família (em preto), Gênero (em vermelho) e Espécie (em azul).</li>
@@ -133,7 +152,7 @@
       </ul>
     </div>
 
-    <div id="links" class="box">
+    <div class="box" id="links">
       <div class="box-title">Links Importantes</div>
       <ul>
         <li>Site 1 - Link 1</li>
@@ -141,12 +160,13 @@
         <li>Site 3 - Link 3</li>
       </ul>
     </div>
-
-    <div style="text-align: right; font-size: 12px; padding: 10px;">
-      Criado por Vitor Eduardo Girotto Barelli<br>
-      Leaflet | Ⓒ OpenStreetMap contributors
-    </div>
   </div>
+
+  <div style="position:fixed; bottom:10px; right:10px; font-size:12px; background:#F2F7F1; padding:5px; border-radius:8px;">
+    Criado por Vitor Eduardo Girotto Barelli<br>
+    Leaflet | Ⓒ OpenStreetMap contributors
+  </div>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script src="mapa_script.js"></script>
