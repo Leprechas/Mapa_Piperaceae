@@ -424,9 +424,9 @@
             const popup = m.getPopup().getContent();
         
             // Filtros ambientais
-            const matchYear = selectedYears.length === 0 || selectedYears.some(y => popup.includes(y));
-            const matchMunicipio = selectedMunicipios.length === 0 || selectedMunicipios.some(mun => popup.includes(mun));
-        
+            const matchYear = years.length === 0 || years.some(y => popup.includes(y));
+            const matchMunicipio = municipios.length === 0 || municipios.some(mun => popup.includes(mun));
+       
             if (matchYear && matchMunicipio) {
               markers.addLayer(m);
               arr.push(m);
