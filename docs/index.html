@@ -447,9 +447,9 @@
         if (!match) return;
       
         // Simula que a espécie foi marcada
-        selectedFamilies.clear();
-        selectedGenera.clear();
-        selectedSpecies = new Set([match]);
+        window.selectedFamilies.clear();
+        window.selectedGenera.clear();
+        window.selectedSpecies = new Set([match]);
       
         applyTaxonSelection();  // Respeita os filtros ambientais
       }
