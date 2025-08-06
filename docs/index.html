@@ -419,11 +419,15 @@
       
           // Agora aplica os filtros ambientais
           speciesMarkers[sp].forEach(m => {
-            const popup = m.getPopup().getContent();
-            const matchYear = years.length === 0 || years.some(y => popup.includes(y));
-            const matchMunicipio = municipios.length === 0 || municipios.some(mun => popup.includes(mun));
-      
-            if (matchYear && matchMunicipio) {
+            const popup = m.getPopup().getContent().toLowerCase();
+          
+            const matchYear = years.length === 0 || years.some(y => popup.includes(y.toLowerCase()));
+            const matchMunicipio = municipios.length === 0 || municipios.some(mun => popup.includes(mun.toLowerCase()));
+          
+            // Se não há filtro nenhum, sempre passa
+            const passes = (years.length === 0 && municipios.length === 0) || (matchYear && matchMunicipio);
+          
+            if (passes) {
               markers.addLayer(m);
               arr.push(m);
             }
