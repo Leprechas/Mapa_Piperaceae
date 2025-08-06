@@ -388,6 +388,10 @@
         }
     }
     function applyTaxonSelection() {
+        console.log("Aplicando seleção taxonômica:");
+        console.log("Espécies selecionadas:", [...window.selectedSpecies]);
+        console.log("Anos selecionados:", [...document.querySelectorAll('input[name="year"]:checked')].map(el => el.value));
+        console.log("Municípios selecionados:", [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value));
         selectedFamilies.clear();
         selectedGenera.clear();
         selectedSpecies.clear();
@@ -416,18 +420,16 @@
             });
       
           if (!matchesTaxon) return;
-      
+          console.log("✅ Espécie selecionada encontrada no loop:", sp);
           // Agora aplica os filtros ambientais
           speciesMarkers[sp].forEach(m => {
             const popup = m.getPopup().getContent().toLowerCase();
-          
             const matchYear = years.length === 0 || years.some(y => popup.includes(y.toLowerCase()));
             const matchMunicipio = municipios.length === 0 || municipios.some(mun => popup.includes(mun.toLowerCase()));
           
-            // Se não há filtro nenhum, sempre passa
-            const passes = (years.length === 0 && municipios.length === 0) || (matchYear && matchMunicipio);
-          
-            if (passes) {
+            console.log(`🎯 Avaliando marcador de ${sp} | Match ano: ${matchYear} | Match município: ${matchMunicipio}`);
+            if (matchYear && matchMunicipio) {
+              console.log("🟢 Adicionando marcador ao mapa:", m);
               markers.addLayer(m);
               arr.push(m);
             }
@@ -448,6 +450,8 @@
     function searchSpecies() {
         const query = document.getElementById('searchBox').value.trim().toLowerCase();
         const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase().includes(query));
+        console.log("Query:", query);
+        console.log("Match encontrado:", match);
         if (!match) return;
       
         // Simula que a espécie foi marcada
@@ -455,6 +459,8 @@
         window.selectedGenera.clear();
         window.selectedSpecies.clear();
         window.selectedSpecies.add(match);
+        console.log("Espécies selecionadas:", [...window.selectedSpecies]);
+        console.log("Marcadores dessa espécie:", speciesMarkers[match]);
       
         applyTaxonSelection();  // Respeita os filtros ambientais
       }
