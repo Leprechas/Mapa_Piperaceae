@@ -489,6 +489,7 @@
       selectedGenera.clear();
       selectedSpecies.clear();
       clearSearch();
+      updateSpeciesChart([]);  // ← Atualiza gráfico com todas as coletas
     }
     
     function searchSpecies() {
@@ -550,6 +551,7 @@
       if (!canvas) return;
     
       const countsByYear = {};
+      const titleSuffix = [];
     
       if (speciesList.length === 0) {
         // Contagem total de todas as espécies
@@ -574,6 +576,17 @@
             }
           });
         });
+    
+        // Monta título com os nomes selecionados
+        if (selectedSpecies.size > 0) {
+          titleSuffix.push(`Espécie(s): ${[...selectedSpecies].join(', ')}`);
+        }
+        if (selectedGenera.size > 0) {
+          titleSuffix.push(`Gênero(s): ${[...selectedGenera].join(', ')}`);
+        }
+        if (selectedFamilies.size > 0) {
+          titleSuffix.push(`Família(s): ${[...selectedFamilies].join(', ')}`);
+        }
       }
     
       const years = Object.keys(countsByYear).sort();
@@ -582,16 +595,17 @@
       if (window.speciesChartInstance) {
         window.speciesChartInstance.destroy();
       }
+    
       canvas.width = canvas.parentElement.clientWidth;
       canvas.height = canvas.parentElement.clientHeight;
-
+    
       const ctx = canvas.getContext('2d');
       window.speciesChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: years,
           datasets: [{
-            label: speciesList.length === 0 ? 'Total de coletas por ano' : `Coletas de espécies selecionadas`,
+            label: 'Coletas por ano',
             data: values,
             backgroundColor: 'rgba(107, 142, 111, 0.6)',
             borderColor: 'rgba(107, 142, 111, 1)',
@@ -610,12 +624,12 @@
               display: true,
               text: speciesList.length === 0
                 ? 'Total de coletas por ano'
-                : `Coletas de espécies selecionadas por ano`
+                : `Coletas por ano — ${titleSuffix.join(' | ')}`
             }
           }
         }
       });
-  
+    
       // Mostra o container do gráfico
       document.getElementById('speciesChart').style.display = 'block';
     }
