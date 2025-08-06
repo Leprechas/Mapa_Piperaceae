@@ -152,8 +152,15 @@
     
     #speciesChart {
       grid-column: 2 / 4;
+      height: 100%;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
     }
-    
+    canvas#speciesChartCanvas {
+      flex: 1;
+    }
+
     #speciesLinkContent {
       padding: 10px;
       font-size: 14px;
@@ -463,6 +470,15 @@
         });
       
         if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+        // --- Atualiza o gráfico com as espécies filtradas ---
+        const speciesList = Object.keys(speciesMarkers).filter(sp =>
+          selectedSpecies.has(sp) ||
+          Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
+          Array.from(selectedFamilies).some(fam =>
+            Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp))
+      )
+    );
+    updateSpeciesChart(speciesList);
     }
     
     function clearTaxonSelection() {
@@ -528,37 +544,50 @@
       markersArray[0].openPopup();
     }
     function updateSpeciesChart(speciesName) {
-      const chartContainer = document.getElementById('speciesChart');
       const canvas = document.getElementById('speciesChartCanvas');
-      if (!canvas || !chartContainer) return;
-  
-      // Prepara os dados por ano
+      if (!canvas) return;
+    
       const countsByYear = {};
-      speciesMarkers[speciesName]?.forEach(marker => {
-        const popup = marker.getPopup().getContent();
-        const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
-        if (yearMatch) {
-          const year = yearMatch[1];
-          countsByYear[year] = (countsByYear[year] || 0) + 1;
-        }
-      });
-  
+    
+      if (speciesList.length === 0) {
+        // Contagem total de todas as espécies
+        Object.keys(speciesMarkers).forEach(sp => {
+          speciesMarkers[sp].forEach(marker => {
+            const popup = marker.getPopup().getContent();
+            const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
+            if (yearMatch) {
+              const year = yearMatch[1];
+              countsByYear[year] = (countsByYear[year] || 0) + 1;
+            }
+          });
+        });
+      } else {
+        speciesList.forEach(sp => {
+          speciesMarkers[sp]?.forEach(marker => {
+            const popup = marker.getPopup().getContent();
+            const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
+            if (yearMatch) {
+              const year = yearMatch[1];
+              countsByYear[year] = (countsByYear[year] || 0) + 1;
+            }
+          });
+        });
+      }
+    
       const years = Object.keys(countsByYear).sort();
       const values = years.map(y => countsByYear[y]);
-  
-      // Destroi gráfico anterior se houver
+    
       if (window.speciesChartInstance) {
         window.speciesChartInstance.destroy();
       }
-  
-      // Cria o novo gráfico
+    
       const ctx = canvas.getContext('2d');
       window.speciesChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: years,
           datasets: [{
-            label: `Coletas de ${speciesName} por ano`,
+            label: speciesList.length === 0 ? 'Total de coletas por ano' : `Coletas de espécies selecionadas`,
             data: values,
             backgroundColor: 'rgba(107, 142, 111, 0.6)',
             borderColor: 'rgba(107, 142, 111, 1)',
@@ -566,6 +595,8 @@
           }]
         },
         options: {
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: { beginAtZero: true }
           },
@@ -573,7 +604,9 @@
             legend: { display: false },
             title: {
               display: true,
-              text: `Coletas de ${speciesName} por ano`
+              text: speciesList.length === 0
+                ? 'Total de coletas por ano'
+                : `Coletas de espécies selecionadas por ano`
             }
           }
         }
