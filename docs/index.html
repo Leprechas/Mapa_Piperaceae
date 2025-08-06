@@ -142,6 +142,22 @@
     .hidden {
       display: none;
     }
+    #speciesDetails, #speciesChart {
+      height: 300px;
+    }
+    
+    #speciesDetails {
+      grid-column: 1 / 2;
+    }
+    
+    #speciesChart {
+      grid-column: 2 / 4;
+    }
+    
+    #speciesLinkContent {
+      padding: 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -184,7 +200,18 @@
  
     <!-- Coluna 3 - Mapa -->
     <div class="box" id="map" style="height: 500px;"></div>
-  
+
+    <!-- Nova linha: Informações e Gráfico -->
+    <div id="speciesDetails" class="box">
+      <div class="box-title">Mais informações sobre a espécie selecionada</div>
+      <div id="speciesLinkContent">Selecione uma espécie para visualizar os dados.</div>
+    </div>
+    
+    <div id="speciesChart" class="box">
+      <div class="box-title">Gráfico de coletas</div>
+      <canvas id="chartCanvas"></canvas>
+    </div>
+    
     <!-- Informações relevantes -->
     <div class="box" id="info" style="grid-column: 1 / -1;">
       <div class="box-title">Informações relevantes</div>
