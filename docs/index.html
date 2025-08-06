@@ -170,7 +170,8 @@
       <div class="box-title">Barra de pesquisa de espécie</div>
         <!-- Contêiner fixo (sem rolagem) -->
       <div id="speciesHeader">
-        <input type="text" id="searchBox" placeholder="Digite uma espécie..." class="search-box">
+        <input type="text" id="searchBox" placeholder="Digite uma espécie..." class="search-box" list="speciesSuggestions">
+        <datalist id="speciesSuggestions"></datalist>
         <div class="taxon-buttons">
           <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
           <button onclick="clearTaxonSelection()">Limpar seleção</button>
@@ -389,6 +390,15 @@
             });
           });
         });
+        // ✅ Preenche datalist com sugestões para autocomplete (adicione aqui)
+        const datalist = document.getElementById('speciesSuggestions');
+        if (datalist) {
+          datalist.innerHTML = '';
+          Object.keys(speciesMarkers).sort().forEach(sp => {
+            const option = document.createElement('option');
+            option.value = sp;
+            datalist.appendChild(option);
+          });
       }
     
     function applyTaxonSelection() {
@@ -435,8 +445,9 @@
     }
     
     function searchSpecies() {
-      const query = document.getElementById('searchBox').value.trim();
-      if (query && speciesMarkers[query]) focusSp(query);
+      const query = document.getElementById('searchBox').value.trim().toLowerCase();
+      const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase() === query);
+      if (match) focusSp(match);
     }
     
     function clearSearch() {
