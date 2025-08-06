@@ -454,15 +454,18 @@
         console.log("Match encontrado:", match);
         if (!match) return;
       
-        // Simula que a espécie foi marcada
+        // Limpa seleções anteriores
         window.selectedFamilies.clear();
         window.selectedGenera.clear();
         window.selectedSpecies.clear();
+      
+        // Adiciona a espécie buscada
         window.selectedSpecies.add(match);
         console.log("Espécies selecionadas:", [...window.selectedSpecies]);
         console.log("Marcadores dessa espécie:", speciesMarkers[match]);
       
-        applyTaxonSelection();  // Respeita os filtros ambientais
+        // Aplica a seleção e respeita filtros ambientais
+        applyTaxonSelection();
       }
     
     function clearSearch() {
