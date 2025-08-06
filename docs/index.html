@@ -226,6 +226,7 @@
     <div class="box" id="info" style="grid-column: 1 / -1;">
       <div class="box-title">Informações relevantes</div>
       <ul>
+        <li>Ao abrir o site clique automaticamente em "Limpar seleção" para garantir que tudo funcione como o esperado.</li>
         <li>A organização da lista de espécies está na ordem: Família (em preto), Gênero (em vermelho) e Espécie (em azul).</li>
         <li>Para utilizar a caixa de busca "Digite uma espécie..." deve ser escrito o epíteto específico, ou seja, o segundo nome da espécie, e deve estar escrito corretamente como informado na lista.</li>
         <li>Ao marcar uma caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode selecionar mais de uma caixinha de cada um dos níveis por vez.</li>
@@ -615,6 +616,11 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: {
+              bottom: 20 // ← Aumenta o espaço abaixo para acomodar os anos
+            }
+          },
           scales: {
             y: { beginAtZero: true }
           },
