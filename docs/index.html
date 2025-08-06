@@ -462,6 +462,17 @@
         .forEach(input => input.checked = false);
       applyFilters();
     }
+    function focusSp(sp) {
+      const markersArray = speciesMarkers[sp];
+      if (!markersArray || markersArray.length === 0) return;
+    
+      // Dá zoom no primeiro marcador da espécie
+      const group = L.featureGroup(markersArray);
+      map.fitBounds(group.getBounds().pad(0.25));
+    
+      // Abre popup do primeiro marcador
+      markersArray[0].openPopup();
+    }
   </script>
 </body>
 </html>
