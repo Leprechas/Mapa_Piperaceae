@@ -411,25 +411,23 @@
         const arr = [];
       
         Object.keys(speciesMarkers).forEach(sp => {
-          // Verifica se o táxon está incluído na seleção
           const matchesTaxon =
             selectedSpecies.has(sp) ||
             Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
             Array.from(selectedFamilies).some(fam => {
               return Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp));
             });
-      
+        
           if (!matchesTaxon) return;
-          console.log("✅ Espécie selecionada encontrada no loop:", sp);
-          // Agora aplica os filtros ambientais
+        
           speciesMarkers[sp].forEach(m => {
-            const popup = m.getPopup().getContent().toLowerCase();
-            const matchYear = years.length === 0 || years.some(y => popup.includes(y.toLowerCase()));
-            const matchMunicipio = municipios.length === 0 || municipios.some(mun => popup.includes(mun.toLowerCase()));
-          
-            console.log(`🎯 Avaliando marcador de ${sp} | Match ano: ${matchYear} | Match município: ${matchMunicipio}`);
+            const popup = m.getPopup().getContent();
+        
+            // Filtros ambientais
+            const matchYear = selectedYears.length === 0 || selectedYears.some(y => popup.includes(y));
+            const matchMunicipio = selectedMunicipios.length === 0 || selectedMunicipios.some(mun => popup.includes(mun));
+        
             if (matchYear && matchMunicipio) {
-              console.log("🟢 Adicionando marcador ao mapa:", m);
               markers.addLayer(m);
               arr.push(m);
             }
@@ -448,25 +446,34 @@
     }
     
     function searchSpecies() {
-        const query = document.getElementById('searchBox').value.trim().toLowerCase();
-        const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase().includes(query));
-        console.log("Query:", query);
-        console.log("Match encontrado:", match);
-        if (!match) return;
-      
-        // Limpa seleções anteriores
-        window.selectedFamilies.clear();
-        window.selectedGenera.clear();
-        window.selectedSpecies.clear();
-      
-        // Adiciona a espécie buscada
-        window.selectedSpecies.add(match);
-        console.log("Espécies selecionadas:", [...window.selectedSpecies]);
-        console.log("Marcadores dessa espécie:", speciesMarkers[match]);
-      
-        // Aplica a seleção e respeita filtros ambientais
-        applyTaxonSelection();
-      }
+      const query = document.getElementById('searchBox').value.trim().toLowerCase();
+      const match = Object.keys(speciesMarkers).find(sp => sp.toLowerCase() === query);
+    
+      console.log("Query:", query);
+      console.log("Match encontrado:", match);
+    
+      if (!match) return;
+    
+      // Limpa seleções anteriores
+      window.selectedFamilies.clear();
+      window.selectedGenera.clear();
+      window.selectedSpecies.clear();
+    
+      // Marca a espécie encontrada
+      window.selectedSpecies.add(match);
+    
+      // Atualiza checkboxes da lista (opcional)
+      document.querySelectorAll('.taxon-checkbox').forEach(el => {
+        if (el.dataset.type === 'species') {
+          el.checked = (el.value === match);
+        } else {
+          el.checked = false;
+        }
+      });
+    
+      // Aplica seleção taxonômica e respeita os filtros ambientais
+      applyTaxonSelection();
+    }
     
     function clearSearch() {
       document.getElementById('searchBox').value = '';
