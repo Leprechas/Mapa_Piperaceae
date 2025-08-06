@@ -393,14 +393,14 @@
         // ✅ Preenche datalist com sugestões para autocomplete (adicione aqui)
         const datalist = document.getElementById('speciesSuggestions');
         if (datalist) {
-          datalist.innerHTML = '';
-          Object.keys(speciesMarkers).sort().forEach(sp => {
-            const option = document.createElement('option');
-            option.value = sp;
-            datalist.appendChild(option);
-          });
+        datalist.innerHTML = '';
+        Object.keys(speciesMarkers).sort().forEach(sp => {
+          const option = document.createElement('option');
+          option.value = sp;
+          datalist.appendChild(option);
+        });
       }
-    
+    }
     function applyTaxonSelection() {
       selectedFamilies.clear();
       selectedGenera.clear();
