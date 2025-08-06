@@ -317,52 +317,59 @@
     }
     
     function populateList() {
-      const ul = document.getElementById('speciesList');
-      ul.innerHTML = '';
-      window.selectedFamilies = new Set();
-      window.selectedGenera = new Set();
-      window.selectedSpecies = new Set();
-    
-      const searchBox = document.createElement('input');
-      searchBox.type = 'text';
-      searchBox.id = 'searchBox';
-      searchBox.placeholder = 'Digite uma espécie...';
-      searchBox.className = 'search-box';
-      searchBox.addEventListener('input', searchSpecies);
-      ul.appendChild(searchBox);
-    
-      const buttonBlock = document.createElement('div');
-      buttonBlock.className = 'taxon-buttons';
-      buttonBlock.innerHTML = `
-        <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
-        <button onclick="clearTaxonSelection()">Limpar seleção</button>
-      `;
-      ul.appendChild(buttonBlock);
-    
-      Object.keys(familySpecies).sort().forEach(fam => {
-        const fli = document.createElement('div');
-        fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
-        ul.appendChild(fli);
-        const famBlock = document.createElement('div');
-        famBlock.style.marginLeft = '15px';
-        ul.appendChild(famBlock);
-    
-        Array.from(familySpecies[fam]).sort().forEach(gen => {
-          const gli = document.createElement('div');
-          gli.innerHTML = `<label class="genus-header"><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}"> ${gen} (${genusCount[gen] || 0})</label>`;
-          famBlock.appendChild(gli);
-          const genBlock = document.createElement('div');
-          genBlock.style.marginLeft = '15px';
-          famBlock.appendChild(genBlock);
-    
-          Array.from(genusSpecies[gen]).sort().forEach(sp => {
-            const sli = document.createElement('div');
-            sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
-            genBlock.appendChild(sli);
+        const speciesContainer = document.getElementById('species');
+        const speciesList = document.getElementById('speciesList');
+        speciesList.innerHTML = '';
+      
+        // Evita duplicação: remove os elementos fixos se já existirem
+        const oldSearch = document.getElementById('searchBox');
+        if (oldSearch) oldSearch.remove();
+        const oldButtons = document.querySelector('.taxon-buttons');
+        if (oldButtons) oldButtons.remove();
+      
+        // Campo de busca (fixo)
+        const searchBox = document.createElement('input');
+        searchBox.type = 'text';
+        searchBox.id = 'searchBox';
+        searchBox.placeholder = 'Digite uma espécie...';
+        searchBox.className = 'search-box';
+        searchBox.addEventListener('input', searchSpecies);
+        speciesContainer.insertBefore(searchBox, speciesList);
+      
+        // Botões (fixos)
+        const buttonBlock = document.createElement('div');
+        buttonBlock.className = 'taxon-buttons';
+        buttonBlock.innerHTML = `
+          <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
+          <button onclick="clearTaxonSelection()">Limpar seleção</button>
+        `;
+        speciesContainer.insertBefore(buttonBlock, speciesList);
+      
+        // Preenchimento da lista taxonômica
+        Object.keys(familySpecies).sort().forEach(fam => {
+          const fli = document.createElement('div');
+          fli.innerHTML = `<label class="family-header"><input type="checkbox" class="taxon-checkbox" data-type="family" value="${fam}"> ${fam} (${familyCount[fam] || 0})</label>`;
+          speciesList.appendChild(fli);
+          const famBlock = document.createElement('div');
+          famBlock.style.marginLeft = '15px';
+          speciesList.appendChild(famBlock);
+      
+          Array.from(familySpecies[fam]).sort().forEach(gen => {
+            const gli = document.createElement('div');
+            gli.innerHTML = `<label class="genus-header"><input type="checkbox" class="taxon-checkbox" data-type="genus" value="${gen}"> ${gen} (${genusCount[gen] || 0})</label>`;
+            famBlock.appendChild(gli);
+            const genBlock = document.createElement('div');
+            genBlock.style.marginLeft = '15px';
+            famBlock.appendChild(genBlock);
+      
+            Array.from(genusSpecies[gen]).sort().forEach(sp => {
+              const sli = document.createElement('div');
+              sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
+              genBlock.appendChild(sli);
+            });
           });
         });
-      });
-    }
+      }
     
     function applyTaxonSelection() {
       selectedFamilies.clear();
