@@ -149,9 +149,20 @@
     </div>
   
     <!-- Coluna 2 - Lista de espécies -->
-    <div id="species" class="box" style="display: flex; flex-direction: column;">
+    <div id="species" class="box">
       <div class="box-title">Barra de pesquisa de espécie</div>
-      <div id="speciesList" style="overflow-y: auto; flex: 1;"></div>
+      
+      <!-- Campo de busca -->
+      <input type="text" id="searchBox" placeholder="Digite uma espécie..." class="search-box">
+    
+      <!-- Botões fixos -->
+      <div class="taxon-buttons">
+        <button onclick="applyTaxonSelection()">Aplicar seleção taxonômica</button>
+        <button onclick="clearTaxonSelection()">Limpar seleção</button>
+      </div>
+    
+      <!-- Lista rolável -->
+      <div id="speciesList" class="scroll-species-list"></div>
     </div>
   
     <!-- Coluna 3 - Mapa -->
