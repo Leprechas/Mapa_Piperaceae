@@ -147,11 +147,11 @@
     }
     
     #speciesDetails {
-      grid-column: 1 / 2.5;
+      grid-column: 1 / 2;
     }
     
     #speciesChart {
-      grid-column: 2.5 / 4;
+      grid-column: 2 / 4;
     }
     
     #speciesLinkContent {
@@ -159,6 +159,7 @@
       font-size: 14px;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div id="header">
@@ -209,7 +210,7 @@
     
     <div id="speciesChart" class="box">
       <div class="box-title">Gráfico de coletas</div>
-      <canvas id="chartCanvas"></canvas>
+      <canvas id="speciesChartCanvas" style="width: 100%; height: 100%;"></canvas>
     </div>
     
     <!-- Informações relevantes -->
@@ -488,6 +489,7 @@
     
       // Marca a espécie encontrada
       window.selectedSpecies.add(match);
+      updateSpeciesChart(match);
     
       // Atualiza checkboxes da lista (opcional)
       document.querySelectorAll('.taxon-checkbox').forEach(el => {
@@ -524,6 +526,61 @@
     
       // Abre popup do primeiro marcador
       markersArray[0].openPopup();
+    }
+    function updateSpeciesChart(speciesName) {
+      const chartContainer = document.getElementById('speciesGraphContainer');
+      const canvas = document.getElementById('speciesChart');
+      if (!canvas || !chartContainer) return;
+  
+      // Prepara os dados por ano
+      const countsByYear = {};
+      speciesMarkers[speciesName]?.forEach(marker => {
+        const popup = marker.getPopup().getContent();
+        const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
+        if (yearMatch) {
+          const year = yearMatch[1];
+          countsByYear[year] = (countsByYear[year] || 0) + 1;
+        }
+      });
+  
+      const years = Object.keys(countsByYear).sort();
+      const values = years.map(y => countsByYear[y]);
+  
+      // Destroi gráfico anterior se houver
+      if (window.speciesChartInstance) {
+        window.speciesChartInstance.destroy();
+      }
+  
+      // Cria o novo gráfico
+      const ctx = canvas.getContext('2d');
+      window.speciesChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: years,
+          datasets: [{
+            label: `Coletas de ${speciesName} por ano`,
+            data: values,
+            backgroundColor: 'rgba(107, 142, 111, 0.6)',
+            borderColor: 'rgba(107, 142, 111, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: `Coletas de ${speciesName} por ano`
+            }
+          }
+        }
+      });
+  
+      // Mostra o container do gráfico
+      chartContainer.style.display = 'block';
     }
   </script>
 </body>
