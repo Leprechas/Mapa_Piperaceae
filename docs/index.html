@@ -407,7 +407,7 @@
       
             Array.from(genusSpecies[gen]).sort().forEach(sp => {
               const sli = document.createElement('div');
-              sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox" data-type="species" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
+              sli.innerHTML = `<label class="species-item"><input type="checkbox" class="taxon-checkbox species-checkbox" data-type="species" data-name="${sp}" value="${sp}"> ${sp} (${speciesCount[sp] || 0})</label>`;
               genBlock.appendChild(sli);
             });
           });
