@@ -317,6 +317,11 @@
     }
     
     function populateList() {
+        const ul = document.getElementById('speciesList');
+        ul.innerHTML = '';
+        window.selectedFamilies = new Set();
+        window.selectedGenera = new Set();
+        window.selectedSpecies = new Set();
         const speciesContainer = document.getElementById('species');
         const speciesList = document.getElementById('speciesList');
         speciesList.innerHTML = '';
