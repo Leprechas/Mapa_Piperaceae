@@ -507,7 +507,7 @@
         };
     updateSpeciesChart(selection);
     renderSpeciesDetails(selection);
-    updateSpeciesDetailsBoxSiteSearch();
+    updateSpeciesDetailsBoxReflora();
     }
     
     function clearTaxonSelection() {
@@ -518,7 +518,7 @@
       clearSearch();
       updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
       renderSpeciesDetails({ families: [], genera: [], species: [] });
-      updateSpeciesDetailsBoxSiteSearch();
+      updateSpeciesDetailsBoxReflora();
     }
     
     function searchSpecies() {
@@ -670,30 +670,51 @@
       return terms;
     }
     
-    function updateSpeciesDetailsBoxSiteSearch() {
+    function updateSpeciesDetailsBoxReflora() {
       const box = document.getElementById('speciesLinkContent');
       if (!box) return;
     
-      const terms = termsForSpeciesLinkSearch();
+      // Monta termos considerando prioridade: espécies > gêneros > famílias
+      const selectedSpecies = [...(window.selectedSpecies || [])];
+      const selectedGenera  = [...(window.selectedGenera  || [])];
+      const selectedFamilies= [...(window.selectedFamilies|| [])];
     
-      if (!terms.length) {
+      // se a espécie vier só com o epíteto, vira "Gênero epíteto"
+      const speciesTerms = selectedSpecies.flatMap(epithet => {
+        const gens = Object.keys(genusSpecies).filter(g => genusSpecies[g]?.has(epithet));
+        return gens.length ? gens.map(g => `${g} ${epithet}`) : [epithet];
+      });
+    
+      const items =
+        speciesTerms.length ? speciesTerms :
+        selectedGenera.length ? selectedGenera :
+        selectedFamilies;
+    
+      if (!items.length) {
         box.innerHTML = 'Selecione uma espécie para visualizar os dados.';
         return;
       }
     
-      const lis = terms.map(t => {
-        // Busca no Google restrita ao Reflora – ListaBrasil
-        const url = 'https://www.google.com/search?q=' +
-          encodeURIComponent(`site:reflora.jbrj.gov.br/reflora/listaBrasil "${t}"`);
-        return `<li><a href="${url}" target="_blank" rel="noopener">${t}</a></li>`;
+      const links = items.map(name => {
+        let url;
+        if (/\s/.test(name)) {
+          // é espécie binomial "Genus epithet"
+          const [gen, ...rest] = name.split(/\s+/);
+          const epithet = rest.join(' ');
+          url = gerarLinkReflora(gen, epithet);
+        } else {
+          // gênero ou família
+          const q = encodeURIComponent(name);
+          url = `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${q}`;
+        }
+        return `<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`;
       }).join('');
     
       box.innerHTML = `
-        <div><strong>Espécie(s) selecionada(s):</strong></div>
-        <ul>${lis}</ul>
-        <div style="margin-top:6px;font-size:12px;color:#444">
-          * Os links abrem no Google uma busca restrita ao Reflora (ListaBrasil),
-          já com o termo selecionado (ex.: <code>Dicliptera squarrosa</code>).
+        <div style="margin-bottom:8px;"><b>Selecionado(s):</b></div>
+        <ul style="margin:0 0 8px 16px;">${links}</ul>
+        <div style="font-size:12px;opacity:.8">
+          * Os links abrem a busca diretamente no <b>Reflora – Lista Brasil</b>.
         </div>
       `;
     }
