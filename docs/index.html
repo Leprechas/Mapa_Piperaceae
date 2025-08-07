@@ -266,6 +266,12 @@
   <script src="mapa_script.js"></script>
   <script>
     // --- Funções auxiliares ---
+    function gerarLinkReflora(genero, especie) {
+      const nomeCompleto = `${genero} ${especie}`;
+      const nomeFormatado = encodeURIComponent(nomeCompleto.trim());
+      return `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${nomeFormatado}`;
+    }
+    
     function toggleFilter(id) {
       const el = document.getElementById(id);
       el.classList.toggle('hidden');
@@ -609,16 +615,27 @@
       }
     
       const links = items.map(name => {
-        const q = encodeURIComponent(name);
-        const url = `https://specieslink.net/search?taxon=${q}`;
+        let url;
+      
+        // Se for espécie (tem espaço → "Gênero epíteto")
+        if (/\s/.test(name)) {
+          const [gen, ...rest] = name.split(/\s+/);
+          const epithet = rest.join(' ');
+          url = gerarLinkReflora(gen, epithet); // usa a função que você já definiu
+        } else {
+          // Se for apenas Gênero ou Família, manda o nome direto
+          const q = encodeURIComponent(name);
+          url = `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${q}`;
+        }
+      
         return `<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`;
       }).join('');
-    
+      
       box.innerHTML = `
         <div style="margin-bottom:8px;"><b>${label}(s) selecionado(s):</b></div>
         <ul style="margin:0 0 8px 16px;">${links}</ul>
         <div style="font-size:12px;opacity:.8">
-          * Os links abrem a busca correspondente no speciesLink em nova aba.
+          * Os links abrem a busca correspondente no <b>Reflora – Lista Brasil</b> em nova aba.
         </div>
       `;
     }
