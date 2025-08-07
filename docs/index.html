@@ -320,6 +320,9 @@
                         `<b>Notas:</b> ${d.notas || '—'}`;
     
           const m = L.marker([d.latitude, d.longitude]).bindPopup(popup);
+          // Salva metadados para filtros e gráfico
+          m.__year = d.ano_coleta ? String(d.ano_coleta) : null;
+          m.__municipio = d.municipio || null;
           markers.addLayer(m);
           if (!speciesMarkers[sp]) speciesMarkers[sp] = [];
           speciesMarkers[sp].push(m);
@@ -382,6 +385,12 @@
       });
     
       if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
+      const selection = {
+        families: [...(window.selectedFamilies || [])],
+        genera:   [...(window.selectedGenera   || [])],
+        species:  [...(window.selectedSpecies  || [])]
+      };
+      updateSpeciesChart(selection);
     }
     
     function populateList() {
@@ -532,6 +541,12 @@
       // Atualiza o mapa e o gráfico com os novos filtros
       applyTaxonSelection();
     }
+
+    function getActiveFilters() {
+      const years = [...document.querySelectorAll('input[name="year"]:checked')].map(el => String(el.value));
+      const municipios = [...document.querySelectorAll('input[name="municipio"]:checked')].map(el => el.value);
+      return { years, municipios };
+    }
     
     function clearSearch() {
       document.getElementById('searchBox').value = '';
@@ -559,6 +574,7 @@
     function updateSpeciesChart(selection) {
       const canvas = document.getElementById('speciesChartCanvas');
       if (!canvas) return;
+      const { years: activeYears, municipios: activeMunicipios } = getActiveFilters();
     
       // helper: retorna todas as espécies que pertencem a um item selecionado
       function speciesForItem(type, name) {
@@ -586,10 +602,13 @@
         const counts = {};
         spList.forEach(sp => {
           (speciesMarkers[sp] || []).forEach(marker => {
-            const popup = marker.getPopup().getContent();
-            const m = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
-            if (m) {
-              const y = m[1];
+            const y = marker.__year ? String(marker.__year) : null;
+            const muni = marker.__municipio || null;
+      
+            const matchYear = activeYears.length === 0 || (y && activeYears.includes(y));
+            const matchMunicipio = activeMunicipios.length === 0 || (muni && activeMunicipios.includes(muni));
+      
+            if (matchYear && matchMunicipio && y) {
               counts[y] = (counts[y] || 0) + 1;
               allYearsSet.add(y);
             }
