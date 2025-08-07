@@ -665,8 +665,9 @@
       }
     
       const lis = terms.map(t => {
+        // Busca no Google restrita ao Reflora – ListaBrasil
         const url = 'https://www.google.com/search?q=' +
-          encodeURIComponent(`site:specieslink.net "${t}"`);
+          encodeURIComponent(`site:reflora.jbrj.gov.br/reflora/listaBrasil "${t}"`);
         return `<li><a href="${url}" target="_blank" rel="noopener">${t}</a></li>`;
       }).join('');
     
@@ -674,7 +675,8 @@
         <div><strong>Espécie(s) selecionada(s):</strong></div>
         <ul>${lis}</ul>
         <div style="margin-top:6px;font-size:12px;color:#444">
-          * Os links abrem a busca <code>site:specieslink.net</code> no Google, já com o termo selecionado.
+          * Os links abrem no Google uma busca restrita ao Reflora (ListaBrasil),
+          já com o termo selecionado (ex.: <code>Dicliptera squarrosa</code>).
         </div>
       `;
     }
