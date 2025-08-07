@@ -267,9 +267,13 @@
   <script>
     // --- Funções auxiliares ---
     function gerarLinkReflora(genero, especie) {
-      const nomeCompleto = `${genero} ${especie}`;
-      const nomeFormatado = encodeURIComponent(nomeCompleto.trim());
-      return `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${nomeFormatado}`;
+      // monta "Genus epithet" e codifica
+      const nome = `${genero} ${especie}`.trim();
+      const q = encodeURIComponent(nome);
+    
+      // tenta abrir diretamente a tela de resultados com "Nome Completo" preenchido
+      // rota mais estável observada na Lista Brasil
+      return `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsulta.do?condicao.taxonomia.nomeCompleto=${q}`;
     }
     
     function toggleFilter(id) {
@@ -698,14 +702,14 @@
       const links = items.map(name => {
         let url;
         if (/\s/.test(name)) {
-          // é espécie binomial "Genus epithet"
+          // é "Genus epithet": divide para passar {genero, especie}
           const [gen, ...rest] = name.split(/\s+/);
           const epithet = rest.join(' ');
           url = gerarLinkReflora(gen, epithet);
         } else {
-          // gênero ou família
+          // gênero ou família: usa o mesmo parâmetro de "Nome Completo"
           const q = encodeURIComponent(name);
-          url = `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${q}`;
+          url = `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsulta.do?condicao.taxonomia.nomeCompleto=${q}`;
         }
         return `<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`;
       }).join('');
