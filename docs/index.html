@@ -501,6 +501,7 @@
         };
     updateSpeciesChart(selection);
     renderSpeciesDetails(selection);
+    updateSpeciesDetailsBoxSiteSearch();
     }
     
     function clearTaxonSelection() {
@@ -511,6 +512,7 @@
       clearSearch();
       updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
       renderSpeciesDetails({ families: [], genera: [], species: [] });
+      updateSpeciesDetailsBoxSiteSearch();
     }
     
     function searchSpecies() {
@@ -632,6 +634,51 @@
       // Abre popup do primeiro marcador
       markersArray[0].openPopup();
     }
+
+    function termsForSpeciesLinkSearch() {
+      const terms = [];
+    
+      // espécies → "Gênero epíteto"
+      for (const sp of (window.selectedSpecies || [])) {
+        const gen = Object.keys(genusSpecies).find(g => genusSpecies[g]?.has(sp));
+        if (gen) terms.push(`${gen} ${sp}`);
+      }
+    
+      // gêneros → "Gênero"
+      for (const gen of (window.selectedGenera || [])) terms.push(gen);
+    
+      // famílias → "Família"
+      for (const fam of (window.selectedFamilies || [])) terms.push(fam);
+    
+      return terms;
+    }
+    
+    function updateSpeciesDetailsBoxSiteSearch() {
+      const box = document.getElementById('speciesLinkContent');
+      if (!box) return;
+    
+      const terms = termsForSpeciesLinkSearch();
+    
+      if (!terms.length) {
+        box.innerHTML = 'Selecione uma espécie para visualizar os dados.';
+        return;
+      }
+    
+      const lis = terms.map(t => {
+        const url = 'https://www.google.com/search?q=' +
+          encodeURIComponent(`site:specieslink.net "${t}"`);
+        return `<li><a href="${url}" target="_blank" rel="noopener">${t}</a></li>`;
+      }).join('');
+    
+      box.innerHTML = `
+        <div><strong>Espécie(s) selecionada(s):</strong></div>
+        <ul>${lis}</ul>
+        <div style="margin-top:6px;font-size:12px;color:#444">
+          * Os links abrem a busca <code>site:specieslink.net</code> no Google, já com o termo selecionado.
+        </div>
+      `;
+    }
+    
     function updateSpeciesChart(selection) {
       const canvas = document.getElementById('speciesChartCanvas');
       if (!canvas) return;
