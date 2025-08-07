@@ -291,24 +291,6 @@
       `;
     }
     
-    function termsForSpeciesLinkSearch() {
-      const terms = [];
-      
-      // espécies → "Gênero epíteto"
-      for (const sp of (window.selectedSpecies || [])) {
-        const gen = Object.keys(genusSpecies).find(g => genusSpecies[g]?.has(sp));
-        if (gen) terms.push(`${gen} ${sp}`);
-      }
-    
-      // gêneros → "Gênero"
-      for (const gen of (window.selectedGenera || [])) terms.push(gen);
-    
-      // famílias → "Família"
-      for (const fam of (window.selectedFamilies || [])) terms.push(fam);
-    
-      return terms;
-    }
-    
     function toggleFilter(id) {
       const el = document.getElementById(id);
       el.classList.toggle('hidden');
@@ -543,8 +525,7 @@
           species:  [...selectedSpecies]
         };
     updateSpeciesChart(selection);
-    renderSpeciesDetails(selection);
-    updateSpeciesDetailsBoxSiteSearch(); 
+    updateSpeciesDetailsBoxSiteSearch();
     }
     
     function clearTaxonSelection() {
@@ -553,9 +534,8 @@
       selectedGenera.clear();
       selectedSpecies.clear();
       clearSearch();
-      updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
-      renderSpeciesDetails({ families: [], genera: [], species: [] });
-      updateSpeciesDetailsBoxSiteSearch(); 
+      updateSpeciesChart({ families: [], genera: [], species: [] });
+      updateSpeciesDetailsBoxSiteSearch();
     }
     
     function searchSpecies() {
@@ -607,19 +587,7 @@
         .forEach(input => input.checked = false);
       applyFilters();
     }
-
-    function renderSpeciesDetails(selection) {
-      const box = document.getElementById('speciesLinkContent');
-      const nothingSelected = !selection ||
-        ((selection.families?.length ?? 0) === 0 &&
-         (selection.genera?.length   ?? 0) === 0 &&
-         (selection.species?.length  ?? 0) === 0);
-    
-      if (nothingSelected) {
-        box.innerHTML = 'Selecione uma espécie para visualizar os dados.';
-        return;
-      }
-    
+      
       // transforma epíteto → "Genus epíteto"
       function resolveSpeciesQueries(epithetOrName) {
         if (/\s/.test(epithetOrName)) return [epithetOrName]; // já é "Genus species"
