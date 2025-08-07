@@ -500,6 +500,7 @@
           species:  [...selectedSpecies]
         };
     updateSpeciesChart(selection);
+    renderSpeciesDetails(selection);
     }
     
     function clearTaxonSelection() {
@@ -509,6 +510,7 @@
       selectedSpecies.clear();
       clearSearch();
       updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
+      renderSpeciesDetails({ families: [], genera: [], species: [] });
     }
     
     function searchSpecies() {
@@ -560,6 +562,65 @@
         .forEach(input => input.checked = false);
       applyFilters();
     }
+
+    function renderSpeciesDetails(selection) {
+      const box = document.getElementById('speciesLinkContent');
+      // Nada selecionado → mensagem padrão
+      const nothingSelected = !selection ||
+        ((selection.families?.length ?? 0) === 0 &&
+         (selection.genera?.length   ?? 0) === 0 &&
+         (selection.species?.length  ?? 0) === 0);
+    
+      if (nothingSelected) {
+        box.innerHTML = 'Selecione uma espécie para visualizar os dados.';
+        return;
+      }
+    
+      // helper: dado um epíteto, retorna possíveis nomes binomiais "Gênero epíteto"
+      // - se já vier binomial (tem espaço), apenas devolve como está
+      // - se o epíteto aparecer em mais de um gênero, retorna todos (raro, mas possível)
+      function resolveSpeciesQueries(epithetOrName) {
+        if (/\s/.test(epithetOrName)) return [epithetOrName]; // já é "Genus species"
+        const results = [];
+        for (const gen of Object.keys(genusSpecies)) {
+          if (genusSpecies[gen] && genusSpecies[gen].has(epithetOrName)) {
+            results.push(`${gen} ${epithetOrName}`);
+          }
+        }
+        // fallback: se não achou o gênero, usa o que veio mesmo
+        return results.length ? results : [epithetOrName];
+      }
+    
+      // Preferência de exibição: espécies > gêneros > famílias
+      let items = [];
+      let label = '';
+      if (selection.species?.length) {
+        // transforma epíteto → binomial
+        items = selection.species.flatMap(resolveSpeciesQueries);
+        label = 'Espécie';
+      } else if (selection.genera?.length) {
+        items = selection.genera;
+        label = 'Gênero';
+      } else if (selection.families?.length) {
+        items = selection.families;
+        label = 'Família';
+      }
+    
+      const links = items.map(name => {
+        const q = encodeURIComponent(name);
+        const url = `https://specieslink.net/search?taxon=${q}`;
+        return `<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`;
+      }).join('');
+    
+      box.innerHTML = `
+        <div style="margin-bottom:8px;"><b>${label}(s) selecionado(s):</b></div>
+        <ul style="margin:0 0 8px 16px;">${links}</ul>
+        <div style="font-size:12px;opacity:.8">
+          * Os links abrem a busca correspondente no speciesLink em nova aba.
+        </div>
+      `;
+    }
+    
     function focusSp(sp) {
       const markersArray = speciesMarkers[sp];
       if (!markersArray || markersArray.length === 0) return;
