@@ -340,7 +340,7 @@
         });
         populateFilters(anos, municipios);
         populateList();
-        updateSpeciesChart([]);
+        updateSpeciesChart({ families: [], genera: [], species: [] });
       });
     
     function populateFilters(anos, municipios) {
@@ -485,12 +485,11 @@
       
         if (arr.length) map.fitBounds(L.featureGroup(arr).getBounds().pad(0.25));
         // --- Atualiza o gráfico com as espécies filtradas ---
-        const speciesList = Object.keys(speciesMarkers).filter(sp =>
-          selectedSpecies.has(sp) ||
-          Array.from(selectedGenera).some(gen => genusSpecies[gen]?.has(sp)) ||
-          Array.from(selectedFamilies).some(fam =>
-            Array.from(familySpecies[fam] || []).some(gen => genusSpecies[gen]?.has(sp))
-      )
+        const selection = {
+          families: [...selectedFamilies],
+          genera:   [...selectedGenera],
+          species:  [...selectedSpecies]
+        };
     );
     updateSpeciesChart(speciesList);
     }
@@ -501,7 +500,7 @@
       selectedGenera.clear();
       selectedSpecies.clear();
       clearSearch();
-      updateSpeciesChart([]);  // ← Atualiza gráfico com todas as coletas
+      updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
     }
     
     function searchSpecies() {
@@ -558,97 +557,148 @@
       // Abre popup do primeiro marcador
       markersArray[0].openPopup();
     }
-    function updateSpeciesChart(speciesList) {
+    function updateSpeciesChart(selection) {
       const canvas = document.getElementById('speciesChartCanvas');
       if (!canvas) return;
     
-      const countsByYear = {};
-      const titleSuffix = [];
+      // helper: retorna todas as espécies que pertencem a um item selecionado
+      function speciesForItem(type, name) {
+        if (type === 'species') return [name];
+        if (type === 'genus')   return Array.from(genusSpecies[name] || []);
+        if (type === 'family') {
+          const gens = Array.from(familySpecies[name] || []);
+          return gens.flatMap(g => Array.from(genusSpecies[g] || []));
+        }
+        return [];
+      }
     
-      if (speciesList.length === 0) {
-        // Contagem total de todas as espécies
-        Object.keys(speciesMarkers).forEach(sp => {
-          speciesMarkers[sp].forEach(marker => {
+      // Se nada selecionado: dataset único com total por ano
+      const nothingSelected = !selection || (
+        selection.families?.length === 0 &&
+        selection.genera?.length   === 0 &&
+        selection.species?.length  === 0
+      );
+    
+      // Colete todos os anos existentes (chave comum) para alinhar datasets
+      const allYearsSet = new Set();
+    
+      // Função que conta por ano para uma lista de espécies
+      function countByYearForSpeciesList(spList) {
+        const counts = {};
+        spList.forEach(sp => {
+          (speciesMarkers[sp] || []).forEach(marker => {
             const popup = marker.getPopup().getContent();
-            const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
-            if (yearMatch) {
-              const year = yearMatch[1];
-              countsByYear[year] = (countsByYear[year] || 0) + 1;
+            const m = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
+            if (m) {
+              const y = m[1];
+              counts[y] = (counts[y] || 0) + 1;
+              allYearsSet.add(y);
             }
           });
         });
-      } else {
-        speciesList.forEach(sp => {
-          speciesMarkers[sp]?.forEach(marker => {
-            const popup = marker.getPopup().getContent();
-            const yearMatch = popup.match(/<b>Ano de coleta:<\/b> (\d{4})/);
-            if (yearMatch) {
-              const year = yearMatch[1];
-              countsByYear[year] = (countsByYear[year] || 0) + 1;
-            }
-          });
-        });
-    
-        // Monta título com os nomes selecionados
-        if (selectedSpecies.size > 0) {
-          titleSuffix.push(`Espécie(s): ${[...selectedSpecies].join(', ')}`);
-        }
-        if (selectedGenera.size > 0) {
-          titleSuffix.push(`Gênero(s): ${[...selectedGenera].join(', ')}`);
-        }
-        if (selectedFamilies.size > 0) {
-          titleSuffix.push(`Família(s): ${[...selectedFamilies].join(', ')}`);
-        }
+        return counts;
       }
     
-      const years = Object.keys(countsByYear).sort();
-      const values = years.map(y => countsByYear[y]);
+      let datasets = [];
+      let chartTitle = 'Coletas por ano';
     
-      if (window.speciesChartInstance) {
-        window.speciesChartInstance.destroy();
+      if (nothingSelected) {
+        // total por ano (todas as espécies)
+        const totalCounts = countByYearForSpeciesList(Object.keys(speciesMarkers));
+        const years = Array.from(new Set(Object.keys(totalCounts))).sort();
+        const values = years.map(y => totalCounts[y]);
+    
+        datasets = [{
+          label: 'Total',
+          data: values,
+          backgroundColor: 'rgba(107,142,111,0.6)',
+          borderColor: 'rgba(107,142,111,1)',
+          borderWidth: 1
+        }];
+    
+        // renderiza (sem empilhamento)
+        renderChart({ years, datasets, stacked: false, title: 'Total de coletas por ano' });
+        return;
       }
     
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
+      // Há seleção → criar um dataset por caixinha marcada
+      const items = [
+        ...(selection.families || []).map(n => ({type:'family', name:n})),
+        ...(selection.genera   || []).map(n => ({type:'genus',   name:n})),
+        ...(selection.species  || []).map(n => ({type:'species', name:n}))
+      ];
     
-      const ctx = canvas.getContext('2d');
-      window.speciesChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: years,
-          datasets: [{
-            label: 'Coletas por ano',
-            data: values,
-            backgroundColor: 'rgba(107, 142, 111, 0.6)',
-            borderColor: 'rgba(107, 142, 111, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: {
-              bottom: 20 // ← Aumenta o espaço abaixo para acomodar os anos
-            }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          },
-          plugins: {
-            legend: { display: false },
-            title: {
-              display: true,
-              text: speciesList.length === 0
-                ? 'Total de coletas por ano'
-                : `Coletas por ano — ${titleSuffix.join(' | ')}`
-            }
-          }
-        }
+      // Paleta simples (repete se passar do tamanho)
+      const baseColors = [
+        'rgba(107,142,111,0.75)',  // verde
+        'rgba(160,190,165,0.75)',
+        'rgba(106,159,181,0.75)',
+        'rgba(181,137,110,0.75)',
+        'rgba(186,104,123,0.75)',
+        'rgba(149,117,205,0.75)',
+        'rgba(255,183,77,0.75)',
+        'rgba(120,144,156,0.75)'
+      ];
+      const baseBorders = baseColors.map(c => c.replace('0.75', '1'));
+    
+      // Primeiro compute os counts de cada item e agregue todos os anos
+      const perItemCounts = items.map(it => {
+        const spList = speciesForItem(it.type, it.name);
+        return { it, counts: countByYearForSpeciesList(spList) };
       });
     
-      // Mostra o container do gráfico
-      document.getElementById('speciesChart').style.display = 'block';
+      const years = Array.from(allYearsSet).sort();
+    
+      // Monte os datasets alinhados por 'years'
+      datasets = perItemCounts.map((rec, idx) => ({
+        label:
+          rec.it.type === 'family' ? `Família: ${rec.it.name}` :
+          rec.it.type === 'genus'   ? `Gênero: ${rec.it.name}`   :
+                                      `Espécie: ${rec.it.name}`,
+        data: years.map(y => rec.counts[y] || 0),
+        backgroundColor: baseColors[idx % baseColors.length],
+        borderColor:     baseBorders[idx % baseBorders.length],
+        borderWidth: 1
+      }));
+    
+      // Título com o resumo da seleção
+      const parts = [];
+      if (selection.families?.length) parts.push(`Família(s): ${selection.families.join(', ')}`);
+      if (selection.genera?.length)   parts.push(`Gênero(s): ${selection.genera.join(', ')}`);
+      if (selection.species?.length)  parts.push(`Espécie(s): ${selection.species.join(', ')}`);
+      chartTitle = `Coletas por ano — ${parts.join(' | ')}`;
+    
+      renderChart({ years, datasets, stacked: true, title: chartTitle });
+    
+      // ------- função que realmente desenha o Chart.js -------
+      function renderChart({ years, datasets, stacked, title }) {
+        if (window.speciesChartInstance) window.speciesChartInstance.destroy();
+    
+        // garantir tamanho cheio da caixa
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+    
+        const ctx = canvas.getContext('2d');
+        window.speciesChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: { labels: years, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { bottom: 20 } },
+            scales: {
+              x: { stacked: !!stacked },
+              y: { stacked: !!stacked, beginAtZero: true }
+            },
+            plugins: {
+              legend: { display: stacked }, // mostra legenda quando empilhado
+              title: { display: true, text: title }
+            }
+          }
+        });
+    
+        document.getElementById('speciesChart').style.display = 'block';
+      }
     }
   </script>
 </body>
