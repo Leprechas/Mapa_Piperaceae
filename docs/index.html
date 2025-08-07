@@ -266,6 +266,16 @@
   <script src="mapa_script.js"></script>
   <script>
     // --- Funções auxiliares ---
+    // Links do Flora e Funga do Brasil
+    function linkFloraFungaTaxon(binomial) {
+      // binomial: "Genus species"
+      return `https://floradobrasil.jbrj.gov.br/taxon/${encodeURIComponent(binomial)}`;
+    }
+    function linkFloraFungaSearch(term) {
+      // busca geral no site (para gênero ou família)
+      return `https://floradobrasil.jbrj.gov.br/search?name=${encodeURIComponent(term)}`;
+    }
+    
     function gerarLinkReflora(genero, especie) {
       // monta "Genus epithet" e codifica
       const nome = `${genero} ${especie}`.trim();
@@ -577,7 +587,6 @@
 
     function renderSpeciesDetails(selection) {
       const box = document.getElementById('speciesLinkContent');
-      // Nada selecionado → mensagem padrão
       const nothingSelected = !selection ||
         ((selection.families?.length ?? 0) === 0 &&
          (selection.genera?.length   ?? 0) === 0 &&
@@ -588,9 +597,7 @@
         return;
       }
     
-      // helper: dado um epíteto, retorna possíveis nomes binomiais "Gênero epíteto"
-      // - se já vier binomial (tem espaço), apenas devolve como está
-      // - se o epíteto aparecer em mais de um gênero, retorna todos (raro, mas possível)
+      // transforma epíteto → "Genus epíteto"
       function resolveSpeciesQueries(epithetOrName) {
         if (/\s/.test(epithetOrName)) return [epithetOrName]; // já é "Genus species"
         const results = [];
@@ -599,47 +606,38 @@
             results.push(`${gen} ${epithetOrName}`);
           }
         }
-        // fallback: se não achou o gênero, usa o que veio mesmo
         return results.length ? results : [epithetOrName];
       }
     
-      // Preferência de exibição: espécies > gêneros > famílias
+      // Preferência: espécies > gêneros > famílias
       let items = [];
       let label = '';
+      let makeUrl = (name) => '#';
+    
       if (selection.species?.length) {
-        // transforma epíteto → binomial
-        items = selection.species.flatMap(resolveSpeciesQueries);
+        items = selection.species.flatMap(resolveSpeciesQueries); // vira binomiais
         label = 'Espécie';
+        makeUrl = (binomial) => linkFloraFungaTaxon(binomial);    // página do táxon
       } else if (selection.genera?.length) {
         items = selection.genera;
         label = 'Gênero';
+        makeUrl = (gen) => linkFloraFungaSearch(gen);             // busca por gênero
       } else if (selection.families?.length) {
         items = selection.families;
         label = 'Família';
+        makeUrl = (fam) => linkFloraFungaSearch(fam);             // busca por família
       }
     
       const links = items.map(name => {
-        let url;
-      
-        // Se for espécie (tem espaço → "Gênero epíteto")
-        if (/\s/.test(name)) {
-          const [gen, ...rest] = name.split(/\s+/);
-          const epithet = rest.join(' ');
-          url = gerarLinkReflora(gen, epithet); // usa a função que você já definiu
-        } else {
-          // Se for apenas Gênero ou Família, manda o nome direto
-          const q = encodeURIComponent(name);
-          url = `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsultaNovaConsulta.do?condicao.taxonomia.nomeCientifico=${q}`;
-        }
-      
+        const url = makeUrl(name);
         return `<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`;
       }).join('');
-      
+    
       box.innerHTML = `
         <div style="margin-bottom:8px;"><b>${label}(s) selecionado(s):</b></div>
         <ul style="margin:0 0 8px 16px;">${links}</ul>
         <div style="font-size:12px;opacity:.8">
-          * Os links abrem a busca correspondente no <b>Reflora – Lista Brasil</b> em nova aba.
+          * Os links abrem diretamente no portal <i>Flora e Funga do Brasil</i>.
         </div>
       `;
     }
