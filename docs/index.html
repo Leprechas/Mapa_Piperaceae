@@ -230,15 +230,13 @@
     <div class="box" id="info" style="grid-column: 1 / -1;">
       <div class="box-title">Informações relevantes</div>
       <ul>
-        <li>Ao abrir o site clique automaticamente em "Limpar seleção" para garantir que tudo funcione como o esperado.</li>
         <li>A organização da lista de espécies está na ordem: Família (em preto), Gênero (em vermelho) e Espécie (em azul).</li>
         <li>Para utilizar a caixa de busca "Digite uma espécie..." deve ser escrito o epíteto específico, ou seja, o segundo nome da espécie, e deve estar escrito corretamente como informado na lista.</li>
         <li>Ao marcar uma caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode selecionar mais de uma caixinha de cada um dos níveis por vez.</li>
         <li>Ao clicar em cima de um localizador de coleta, ele mostra as informações detalhadas da amostra.</li>
         <li>O mapa não apresenta todas as coletas, pois algumas ainda não tem coordenadas, estamos resolvendo isso!</li>
-        <li>Para utilizar os "Filtros" selecione o filtro e marque a caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar com os "Filtros" escolhidos, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode utilizar apenas os "Filtros" sem selecionar as caixinhas dos níveis, ai o mapa mostrará todas as coletas daquele ano ou daquele município</li>
+        <li>Para utilizar os "Filtros" selecione o filtro e marque a caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa/gráfico atualizarem com os "Filtros" escolhidos, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa e o gráfico. Vale lembrar que você pode utilizar apenas os "Filtros" sem selecionar as caixinhas dos níveis, ai o mapa e gráfico mostrará todas as coletas daquele ano ou daquele município</li>
         <li>Para vizualizar os "Filtros" só clicar neles, clicando novamente tu vai recolher eles.</li>
-        <li>Coletas com coordenadas ausentes são exibidas em (0,0) — estamos corrigindo isso.</li>
         <li>Este site é um projeto do Laboratório de Vegetação Ripária - Núpelia - UEM.</li>
         <li>Link: <a href="https://cpr.uem.br/index.php/catalogos/2415-laboratorio-de-vegetacao-riparia" target="_blank">Site do laboratório</a></li>
         <li>Contato: <a href="mailto:vitorbarelli@gmail.com">vitorbarelli@gmail.com</a></li>
@@ -266,24 +264,49 @@
   <script src="mapa_script.js"></script>
   <script>
     // --- Funções auxiliares ---
-    // Links do Flora e Funga do Brasil
-    function linkFloraFungaTaxon(binomial) {
-      // binomial: "Genus species"
-      return `https://floradobrasil.jbrj.gov.br/taxon/${encodeURIComponent(binomial)}`;
-    }
-    function linkFloraFungaSearch(term) {
-      // busca geral no site (para gênero ou família)
-      return `https://floradobrasil.jbrj.gov.br/search?name=${encodeURIComponent(term)}`;
+    function updateSpeciesDetailsBoxSiteSearch() {
+      const box = document.getElementById('speciesLinkContent');
+      if (!box) return;
+    
+      const terms = termsForSpeciesLinkSearch();
+    
+      if (!terms.length) {
+        box.innerHTML = 'Selecione uma espécie para visualizar os dados.';
+        return;
+      }
+    
+      const lis = terms.map(t => {
+        const url = 'https://www.google.com/search?q=' +
+          encodeURIComponent(`site:reflora.jbrj.gov.br/reflora/listaBrasil "${t}"`);
+        return `<li><a href="${url}" target="_blank" rel="noopener">${t}</a></li>`;
+      }).join('');
+    
+      box.innerHTML = `
+        <div><strong>Selecionado(s):</strong></div>
+        <ul>${lis}</ul>
+        <div style="margin-top:6px;font-size:12px;color:#444">
+          * Os links abrem no Google uma busca restrita ao Reflora (ListaBrasil),
+          já com o termo selecionado (ex.: <code>Dicliptera squarrosa</code>).
+        </div>
+      `;
     }
     
-    function gerarLinkReflora(genero, especie) {
-      // monta "Genus epithet" e codifica
-      const nome = `${genero} ${especie}`.trim();
-      const q = encodeURIComponent(nome);
+    function termsForSpeciesLinkSearch() {
+      const terms = [];
+      
+      // espécies → "Gênero epíteto"
+      for (const sp of (window.selectedSpecies || [])) {
+        const gen = Object.keys(genusSpecies).find(g => genusSpecies[g]?.has(sp));
+        if (gen) terms.push(`${gen} ${sp}`);
+      }
     
-      // tenta abrir diretamente a tela de resultados com "Nome Completo" preenchido
-      // rota mais estável observada na Lista Brasil
-      return `https://reflora.jbrj.gov.br/reflora/listaBrasil/ConsultaPublicaUC/ResultadoDaConsulta.do?condicao.taxonomia.nomeCompleto=${q}`;
+      // gêneros → "Gênero"
+      for (const gen of (window.selectedGenera || [])) terms.push(gen);
+    
+      // famílias → "Família"
+      for (const fam of (window.selectedFamilies || [])) terms.push(fam);
+    
+      return terms;
     }
     
     function toggleFilter(id) {
@@ -521,7 +544,7 @@
         };
     updateSpeciesChart(selection);
     renderSpeciesDetails(selection);
-    updateSpeciesDetailsBoxReflora();
+    updateSpeciesDetailsBoxSiteSearch(); 
     }
     
     function clearTaxonSelection() {
@@ -532,7 +555,7 @@
       clearSearch();
       updateSpeciesChart({ families: [], genera: [], species: [] });  // ← Atualiza gráfico com todas as coletas
       renderSpeciesDetails({ families: [], genera: [], species: [] });
-      updateSpeciesDetailsBoxReflora();
+      updateSpeciesDetailsBoxSiteSearch(); 
     }
     
     function searchSpecies() {
