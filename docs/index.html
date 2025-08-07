@@ -235,6 +235,7 @@
         <li>Para utilizar a caixa de busca "Digite uma espécie..." deve ser escrito o epíteto específico, ou seja, o segundo nome da espécie, e deve estar escrito corretamente como informado na lista.</li>
         <li>Ao marcar uma caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode selecionar mais de uma caixinha de cada um dos níveis por vez.</li>
         <li>Ao clicar em cima de um localizador de coleta, ele mostra as informações detalhadas da amostra.</li>
+        <li>O mapa não apresenta todas as coletas, pois algumas ainda não tem coordenadas, estamos resolvendo isso!</li>
         <li>Para utilizar os "Filtros" selecione o filtro e marque a caixinha de qualquer um dos níveis, clique em "Aplicar seleção taxonômica" para o mapa atualizar com os "Filtros" escolhidos, quando terminar sua vizualização clique em "Limpar seleção" para reiniciar o mapa. Vale lembrar que você pode utilizar apenas os "Filtros" sem selecionar as caixinhas dos níveis, ai o mapa mostrará todas as coletas daquele ano ou daquele município</li>
         <li>Para vizualizar os "Filtros" só clicar neles, clicando novamente tu vai recolher eles.</li>
         <li>Coletas com coordenadas ausentes são exibidas em (0,0) — estamos corrigindo isso.</li>
@@ -295,6 +296,11 @@
           if (!sp) return;
           const gen = d.genero || 'Desconhecido';
           const fam = d.familia || 'Desconhecida';
+
+          // 🚫 Ignorar coletas sem coordenadas ou com (0,0)
+          if (!d.latitude || !d.longitude || (d.latitude === 0 && d.longitude === 0)) {
+            return;
+          }
     
           speciesCount[sp] = (speciesCount[sp] || 0) + 1;
           if (!familySpecies[fam]) familySpecies[fam] = new Set();
