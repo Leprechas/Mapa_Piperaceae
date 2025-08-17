@@ -104,4 +104,4 @@ Cada item representa uma coleta (ou ponto representativo). Campos marcados com �
 
 ## Citação sugerida
 
-> Barelli, V. E. G.; Dalbianco, M. E. V.; Fernandes, C. E. B.; Romagnolo, M. B.; Kawakite, K.(2025). *Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM) — aplicação web de visualização, filtros e análise temporal*. Repositório GitHub. Disponível em: **https://github.com/Leprechas/Mapa_Piperaceae**.
+> Barelli, V. E. G.; Dalbianco, M. E. V.; Fernandes, C. E. B.; Romagnolo, M. B.; BARELLI, M. A. A.; Kawakite, K.(2025). *Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM) — aplicação web de visualização, filtros e análise temporal*. Repositório GitHub. Disponível em: **https://github.com/Leprechas/Mapa_Piperaceae**.
