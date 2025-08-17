@@ -1,5 +1,5 @@
 # Mapa de coletas do Herbário do Núpelia UEM (HNUP-UEM)
-[texto do link](https://leprechas.github.io/Mapa_Piperaceae/)
+[Link para o site '-'](https://leprechas.github.io/Mapa_Piperaceae/)
 
 Aplicação web aberta para **visualização, filtragem e análise** dos registros de coletas vinculados ao Herbário do Núcleo de Pesquisas em Limnologia, Ictiologia e Aquicultura da Universidade Estadual de Maringá (HNUP-UEM), com ênfase nas espécies estudadas pelo **Laboratório de Vegetação Ripária (Nupélia/UEM)**.  
 > O exemplo atual pode estar focado em grupos específicos (ex.: **Piperaceae**), mas a aplicação é **genérica** e pode ser usada por outros herbários/labs com seus próprios dados.
